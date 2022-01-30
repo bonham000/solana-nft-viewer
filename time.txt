@@ -1,0 +1,6 @@
+Sunday January 30, 2020:
+
+4pm - ...?
+- Initial repo setup + basic project structure
+- Create basic routing and component structure
+- Setup dev-tooling (Prettier, ESLint, Jest, CI/CD, etc.)

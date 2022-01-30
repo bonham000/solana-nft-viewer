@@ -1,4 +1,6 @@
-# Getting Started with Create React App
+# Nifty Information
+
+View some information about NFTs on Solana.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
