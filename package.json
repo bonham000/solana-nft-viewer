@@ -1,5 +1,5 @@
 {
-  "name": "nft-viewer",
+  "name": "solana-nft-viewer",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
