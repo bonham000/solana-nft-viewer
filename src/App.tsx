@@ -1,7 +1,6 @@
 import React from "react";
 import styled from "styled-components";
 import { useNavigate, useLocation, Routes, Route } from "react-router-dom";
-import TransactionDetail from "./pages/TxDetail";
 import Transactions from "./pages/Txs";
 import { Link } from "react-router-dom";
 
@@ -33,14 +32,14 @@ function App() {
       <Body>
         <form onSubmit={handleSubmit}>
           <Input
-            placeholder="Enter a Solana NFT Mint Address"
             value={address}
+            placeholder="Input an NFT's mint account"
             onChange={(e) => setAddress(e.target.value)}
           />
         </form>
         <Routes>
+          <Route path="/" element={null} />
           <Route path="/txs/:address" element={<Transactions />} />
-          <Route path="/tx/:hash" element={<TransactionDetail />} />
         </Routes>
       </Body>
     </div>
@@ -91,12 +90,16 @@ const Input = styled.input`
   margin-top: 48px;
   margin-bottom: 48px;
   width: 450px;
-  height: 35px;
+  height: 45px;
   border-radius: 48px;
   border: 1px solid rgb(215, 215, 215);
   outline: none;
   padding-left: 32px;
   padding-right: 32px;
+
+  @media (max-width: 500px) {
+    width: 80vw;
+  }
 `;
 
 export default App;
