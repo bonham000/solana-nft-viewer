@@ -8,14 +8,14 @@ Sunday January 30, 2020:
 - Dig around solana/web3.js to figure out how to fetch transaction history for an address
 - Dig around Magic Eden and try to figure out how to stitch together activity history for a mint address
 - Piece together potential solution:
-  1. Use mint address history to collect owner addresses from transfer transactions
-  2. View each owner transaction history and find any transactions involving that mint and the Magic Eden program address
+  1. Use mint address transaction history to find accounts storing that mint
+  2. View each account transaction history and look for transactions involving Magic Eden program address
   3. Combine the above for a full activity history
-  4. Figure out some way too parse the Magic Eden transactions...? Probably a hacky workaround?
 
-Monday, January 31, 2022
-- Implement potential solution in code and sanity check against Magic Eden activity histories
-- Cleanup code solution and integrate with the nifty information UI
-- Build out UI components to visualize each transaction history step
-- Finalize UI and sanity check against Magic Eden
-- Final cleanup and refactoring, add documentation and comments
+Monday, January 31, 2022:
+10am - 4pm (6 hours)
+- Build/debug potential solution and sanity check against Magic Eden activity histories
+- Complete partial implementation of activity history
+- Build out UI elements to view NFT history
+- Fetch and display NFT metadata
+- Fetch SOL price for displaying USD prices
