@@ -74,7 +74,6 @@ export const fetchTransactionHistory = async (address: string) => {
   }
 
   const activity: TransactionVariants[] = [];
-
   const tokenAccounts: PublicKey[] = [];
 
   for (const tx of txs) {

@@ -63,7 +63,7 @@ function App() {
 }
 
 const Header = styled.div`
-  height: 50px;
+  height: 55px;
   width: 100%;
   display: flex;
   align-items: center;
@@ -90,7 +90,7 @@ const Header = styled.div`
 const HeaderTitle = styled.h1`
   color: white;
   font-size: 16px;
-  font-weight: 400;
+  font-weight: 500;
   margin: 0;
   text-decoration: none !important;
 `;
