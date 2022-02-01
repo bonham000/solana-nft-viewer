@@ -1,3 +1,5 @@
+Total Time = 14 hours
+
 Sunday January 30, 2020:
 4pm - 8pm (4 hours)
 - Initial repo setup + basic project structure
@@ -21,7 +23,8 @@ Monday, January 31, 2022:
 - Fetch SOL price for displaying USD prices
 
 Tuesday, February 1, 2022:
-12pm - 2pm (2 hours)
+12pm - 4pm (4 hours)
 - Implement Result type to handle API response states: loading, error, ok
 - Add more tests
 - Refactor and cleanup code, add comments
+- Polish up styles and layout, minor improvements for mobile layout
