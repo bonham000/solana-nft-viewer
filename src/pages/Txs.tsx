@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { useLocation } from "react-router-dom";
 import { Shimmer } from "react-shimmer";
@@ -6,7 +6,7 @@ import {
   NftMetadata,
   TransactionType,
   TransactionVariants,
-} from "../tools/types";
+} from "../tools/web3-types";
 import {
   fetchSolPrice,
   fetchTokenMetadata,
@@ -15,22 +15,35 @@ import {
 import {
   formatDate,
   formatFiatPrice,
+  copyToClipboard,
   formatNumber,
   lamportsToSOL,
+  abbreviateAddress,
+  assertUnreachable,
 } from "../tools/utils";
 import { useInterval } from "usehooks-ts";
 import BN from "bignumber.js";
+import toast from "react-hot-toast";
+import {
+  ResultLoading,
+  Result,
+  Ok,
+  Err,
+  matchResult,
+} from "../tools/result-type";
+
+type TokenHistoryState = Result<TransactionVariants[], Error>;
+type PriceState = Result<BN, Error>;
+type NftMetadataState = Result<NftMetadata, Error>;
 
 const Transactions: React.FC = () => {
-  // Setup various state management for this component
-  const [historyLoading, setHistoryLoading] = React.useState(true);
-  const [metadataLoading, setMetadataLoading] = React.useState(true);
-  const [priceLoading, setPriceLoading] = React.useState(true);
-  const [solPrice, setSolPrice] = React.useState<BN | null>(null);
-  const [nftMetadata, setNftMetadata] = React.useState<NftMetadata | null>(
-    null,
+  const [priceState, setPriceState] = useState<PriceState>(ResultLoading());
+  const [nftMetadataState, setNftMetadataState] = useState<NftMetadataState>(
+    ResultLoading(),
   );
-  const [history, setHistory] = React.useState<TransactionVariants[]>([]);
+  const [tokenHistoryState, setTokenHistoryState] = useState<TokenHistoryState>(
+    ResultLoading(),
+  );
 
   // Derive current address from URL location state
   const location = useLocation();
@@ -39,9 +52,12 @@ const Transactions: React.FC = () => {
   // Fetch/update SOL price on a 10 second interval
   useInterval(() => {
     const fetchPriceData = async () => {
-      const result = await fetchSolPrice();
-      setPriceLoading(false);
-      setSolPrice(result);
+      try {
+        const result = await fetchSolPrice();
+        setPriceState(Ok(result));
+      } catch (err) {
+        setPriceState(Err(err as Error));
+      }
     };
 
     fetchPriceData();
@@ -49,18 +65,18 @@ const Transactions: React.FC = () => {
 
   // Reset state when the address changes
   React.useEffect(() => {
-    setHistory([]);
-    setNftMetadata(null);
-    setHistoryLoading(true);
-    setMetadataLoading(true);
+    setNftMetadataState(ResultLoading());
+    setTokenHistoryState(ResultLoading());
   }, [address]);
 
   React.useEffect(() => {
     const fetchHistory = async () => {
-      const result = await fetchTransactionHistory(address);
-      setHistoryLoading(false);
-      setHistory(result);
-      console.log(result);
+      try {
+        const result = await fetchTransactionHistory(address);
+        setTokenHistoryState(Ok(result));
+      } catch (err) {
+        setTokenHistoryState(Err(err as Error));
+      }
     };
 
     fetchHistory();
@@ -68,9 +84,12 @@ const Transactions: React.FC = () => {
 
   React.useEffect(() => {
     const fetchHistory = async () => {
-      const result = await fetchTokenMetadata(address);
-      setMetadataLoading(false);
-      setNftMetadata(result);
+      try {
+        const result = await fetchTokenMetadata(address);
+        setNftMetadataState(Ok(result));
+      } catch (err) {
+        setNftMetadataState(Err(err as Error));
+      }
     };
 
     fetchHistory();
@@ -78,40 +97,52 @@ const Transactions: React.FC = () => {
 
   return (
     <TxContainer>
-      {metadataLoading ? (
-        <ImageContainer>
-          <ImageShimmer />
-          <div style={{ height: 137 }} />
-        </ImageContainer>
-      ) : (
-        nftMetadata && (
+      {matchResult(nftMetadataState, {
+        ok: (nftMetadata) => (
           <ImageContainer>
             <NFT src={nftMetadata.image} alt={`${nftMetadata.name} NFT`} />
             <NftName>{nftMetadata.name}</NftName>
           </ImageContainer>
-        )
-      )}
+        ),
+        loading: () => (
+          <ImageContainer>
+            <ImageShimmer />
+            <div style={{ height: 137 }} />
+          </ImageContainer>
+        ),
+        err: () => (
+          <ImageContainer>
+            <ErrorText>Failed to load NFT Metadata</ErrorText>
+          </ImageContainer>
+        ),
+      })}
       <TxTitle>ACTIVITY</TxTitle>
-      {historyLoading && <LoadingText>Loading...</LoadingText>}
-      {history.map((tx) => {
-        const time = tx.tx.blockTime;
-        return (
-          <Tx key={tx.signatures[0]}>
-            <TxLeft>
-              <TxHeading>{tx.type}</TxHeading>
-              {time ? (
-                <TxSubHeading>{formatDate(time * 1000)}</TxSubHeading>
-              ) : (
-                <TxSubHeading>Unknown block</TxSubHeading>
-              )}
-            </TxLeft>
-            <PriceData
-              tx={tx}
-              solPrice={solPrice}
-              priceLoading={priceLoading}
-            />
-          </Tx>
-        );
+
+      {matchResult(tokenHistoryState, {
+        ok: (history) => {
+          return (
+            <>
+              {history.map((tx) => {
+                const time = tx.tx.blockTime;
+                return (
+                  <Tx key={tx.signatures[0]}>
+                    <TxLeft>
+                      <TxHeading>{renderTransactionTitle(tx)}</TxHeading>
+                      {time ? (
+                        <TxSubHeading>{formatDate(time * 1000)}</TxSubHeading>
+                      ) : (
+                        <TxSubHeading>Unknown block</TxSubHeading>
+                      )}
+                    </TxLeft>
+                    <PriceData tx={tx} priceState={priceState} />
+                  </Tx>
+                );
+              })}
+            </>
+          );
+        },
+        loading: () => <LoadingText>Loading...</LoadingText>,
+        err: () => <ErrorText>Failed to load NFT Metadata</ErrorText>,
       })}
     </TxContainer>
   );
@@ -122,10 +153,9 @@ const Transactions: React.FC = () => {
  */
 const PriceData = (props: {
   tx: TransactionVariants;
-  solPrice: BN | null;
-  priceLoading: boolean;
+  priceState: PriceState;
 }) => {
-  const { tx, solPrice, priceLoading } = props;
+  const { tx, priceState } = props;
   const { type } = tx;
 
   if (type !== TransactionType.Sale) {
@@ -138,13 +168,13 @@ const PriceData = (props: {
   return (
     <TxRight>
       <TxHeading>{formatNumber(sol)} ◎</TxHeading>
-      {priceLoading ? (
-        <TxSubHeading>Loading...</TxSubHeading>
-      ) : solPrice === null ? (
-        <TxSubHeading>Failed to fetch SOL price...</TxSubHeading>
-      ) : (
-        <TxSubHeading>{formatFiatPrice(sol, solPrice)}</TxSubHeading>
-      )}
+      {matchResult(priceState, {
+        ok: (solPrice) => (
+          <TxSubHeading>{formatFiatPrice(sol, solPrice)}</TxSubHeading>
+        ),
+        loading: () => <TxSubHeading>Loading prices...</TxSubHeading>,
+        err: () => <TxSubHeading>Error loading prices</TxSubHeading>,
+      })}
     </TxRight>
   );
 };
@@ -192,6 +222,11 @@ const LoadingText = styled.p`
   color: rgb(145, 145, 145);
 `;
 
+const ErrorText = styled.p`
+  font-size: 14px;
+  color: rgb(145, 145, 145);
+`;
+
 const TxTitle = styled.h2`
   font-size: 14px;
   color: rgb(145, 145, 145);
@@ -233,6 +268,67 @@ const TxSubHeading = styled(TxText)`
   margin-bottom: 6px;
   font-size: 14px;
   color: rgb(150, 150, 150);
+`;
+
+/**
+ * Handle rendering the transaction summary title for a given transaction.
+ */
+const renderTransactionTitle = (tx: TransactionVariants) => {
+  const { type } = tx;
+  switch (type) {
+    case TransactionType.Mint:
+      return (
+        <span>
+          Minted by <RenderAddress address={tx.minter} />
+        </span>
+      );
+    case TransactionType.Transfer:
+      return (
+        <span>
+          Transferred to <RenderAddress address={tx.destination} />
+        </span>
+      );
+    case TransactionType.Listing:
+      return (
+        <span>
+          Listed by <RenderAddress address={tx.seller} />
+        </span>
+      );
+    case TransactionType.CancelListing:
+      return (
+        <span>
+          Listing cancelled by <RenderAddress address={tx.seller} />
+        </span>
+      );
+    case TransactionType.Sale:
+      return (
+        <span>
+          Bought by <RenderAddress address={tx.buyer} />
+        </span>
+      );
+    default:
+      return assertUnreachable(type);
+  }
+};
+
+const RenderAddress = (props: { address: string }) => {
+  const { address } = props;
+  return (
+    <ClickableAddress
+      onClick={() => {
+        copyToClipboard(address);
+        toast.success(`Address copied to clipboard.`);
+      }}
+    >
+      {abbreviateAddress(address)}
+    </ClickableAddress>
+  );
+};
+
+const ClickableAddress = styled.span`
+  :hover {
+    cursor: pointer;
+  }
 `;
 
 export default Transactions;

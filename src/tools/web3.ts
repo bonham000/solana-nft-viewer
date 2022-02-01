@@ -9,13 +9,8 @@ import {
   TransactionType,
   TransactionVariants,
   TransferTransaction,
-} from "./types";
+} from "./web3-types";
 import BN from "bignumber.js";
-
-// Avoid RPC rate limits....
-const wait = async (time = 250) => {
-  return new Promise((resolve) => setTimeout(resolve, time));
-};
 
 const connection = new Connection(clusterApiUrl("mainnet-beta"));
 
@@ -63,15 +58,13 @@ export const fetchTransactionHistory = async (address: string) => {
   const pk = new PublicKey(address);
   const signatures = await connection.getSignaturesForAddress(pk);
 
-  let txs = [];
-  for (const signature of signatures) {
-    // Help with RPC rate limit issues
-    await wait(750);
-    const tx = await connection.getParsedConfirmedTransaction(
-      signature.signature,
-    );
-    txs.push(tx);
-  }
+  console.log(
+    `Found ${signatures.length} signatures for address ${pk.toBase58()}`,
+  );
+
+  let txs = await connection.getParsedConfirmedTransactions(
+    signatures.map((x) => x.signature),
+  );
 
   const activity: TransactionVariants[] = [];
   const tokenAccounts: PublicKey[] = [];
@@ -85,16 +78,19 @@ export const fetchTransactionHistory = async (address: string) => {
 
           // Mint transaction
           if (type === "mintTo") {
+            console.log(tx);
+            const minter = inx.parsed.info.mintAuthority;
             const mintTransaction: MintTransaction = {
               tx,
-              minter: "???",
+              minter,
               type: TransactionType.Mint,
               signatures: tx.transaction.signatures,
             };
             activity.push(mintTransaction);
+            tokenAccounts.push(new PublicKey(inx.parsed.info.account));
           }
 
-          // Transfer transaction
+          // Transfer transactions
           if (type === "transferChecked") {
             const mint = inx.parsed.info.mint;
             if (mint === address) {
@@ -109,7 +105,6 @@ export const fetchTransactionHistory = async (address: string) => {
               };
 
               activity.push(transferTransaction);
-
               tokenAccounts.push(new PublicKey(destination));
             }
           }
@@ -118,18 +113,16 @@ export const fetchTransactionHistory = async (address: string) => {
     }
   }
 
-  for (const owner of tokenAccounts) {
-    const signatures = await connection.getSignaturesForAddress(owner);
+  console.log("Token accounts: ", tokenAccounts);
 
+  for (const account of tokenAccounts) {
+    const signatures = await connection.getSignaturesForAddress(account);
     const magicEdenTransactions = [];
-    const txs = [];
+    const txs = await connection.getParsedConfirmedTransactions(
+      signatures.map((x) => x.signature),
+    );
 
-    for (const signature of signatures) {
-      const tx = await connection.getParsedConfirmedTransaction(
-        signature.signature,
-      );
-      txs.push(tx);
-
+    for (const tx of txs) {
       const accounts = tx?.transaction.message.accountKeys;
       if (accounts) {
         for (const account of accounts) {
@@ -187,7 +180,6 @@ export const fetchTransactionHistory = async (address: string) => {
                 tx,
                 type: TransactionType.Sale,
                 lamports: lamportsTransferred,
-                seller: "???",
                 buyer,
                 signatures: tx.transaction.signatures,
               };

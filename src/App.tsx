@@ -8,15 +8,25 @@ import { validateAddressAsPublicKey } from "./tools/utils";
 import toast, { Toaster } from "react-hot-toast";
 
 function App() {
-  const navigate = useNavigate();
-  // Derive current address from URL location state
   const location = useLocation();
-  const urlAddress = location.pathname.replace("/txs/", "");
-  const initialAddress = validateAddressAsPublicKey(urlAddress)
-    ? urlAddress
-    : "";
+  const navigate = useNavigate();
+  const [address, setAddress] = React.useState("");
 
-  const [address, setAddress] = React.useState(initialAddress);
+  // Reset entered address on navigation back to base route
+  React.useEffect(() => {
+    console.log("useEffect");
+    const { pathname } = location;
+    if (pathname.includes("/txs/")) {
+      const urlAddress = location.pathname.replace("/txs/", "");
+      if (validateAddressAsPublicKey(urlAddress)) {
+        setAddress(urlAddress);
+      } else {
+        console.log("wrong address");
+        toast.error("Invalid address provided in url");
+        navigate("/");
+      }
+    }
+  }, [location, navigate]);
 
   // Reset entered address on navigation back to base route
   React.useEffect(() => {

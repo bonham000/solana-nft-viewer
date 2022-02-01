@@ -3,6 +3,23 @@ import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import BN from "bignumber.js";
 
 /**
+ * Wait some time.
+ */
+export const wait = async (time = 250) => {
+  return new Promise((resolve) => setTimeout(resolve, time));
+};
+
+/**
+ * Assert a condition cannot occur. Used for writing exhaustive switch
+ * blocks guarantee every value is handled.
+ */
+export const assertUnreachable = (x: never): never => {
+  throw new Error(
+    `Panic! Received a value which should not exist: ${JSON.stringify(x)}`,
+  );
+};
+
+/**
  * Format a date.
  */
 export const formatDate = (date: number) => {
@@ -54,4 +71,21 @@ export const validateAddressAsPublicKey = (address: string) => {
   } catch (err) {
     return false;
   }
+};
+
+/**
+ * Abbreviate a public key address for display purposes.
+ */
+export const abbreviateAddress = (address: string) => {
+  return `${address.slice(0, 4)}...${address.slice(address.length - 4)}`;
+};
+
+// Copy some text to the clipboard
+export const copyToClipboard = (text: string) => {
+  const el = document.createElement("textarea");
+  el.value = text;
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand("copy");
+  document.body.removeChild(el);
 };
