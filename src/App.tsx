@@ -83,6 +83,7 @@ function App() {
             type="text"
             value={address}
             ref={searchInput}
+            spellCheck={false}
             placeholder="Input an NFT's mint account"
             onChange={(e) => setAddress(e.target.value)}
           />

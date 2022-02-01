@@ -135,7 +135,7 @@ const NftDetails: React.FC = () => {
               <PriceDataComponent tx={tx} priceState={priceState} />
             </Tx>
           )),
-        loading: () => <LoadingText>Loading...</LoadingText>,
+        loading: () => <LoadingText>Loading history...</LoadingText>,
         err: () => <ErrorText>Failed to load NFT activity history</ErrorText>,
       })}
     </TxContainer>
