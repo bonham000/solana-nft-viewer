@@ -152,7 +152,8 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
             for (const inx of innerInstruction.instructions) {
               if ("parsed" in inx) {
                 if (inx.parsed.type === "transfer") {
-                  lamportsTransferred.plus(inx.parsed.info.lamports);
+                  const amount = inx.parsed.info.lamports;
+                  lamportsTransferred = lamportsTransferred.plus(amount);
                 }
 
                 if (inx.parsed.type === "setAuthority") {

@@ -169,13 +169,13 @@ const ImageContainer = styled.div`
 `;
 
 const NFT = styled.img`
-  width: 250px;
-  height: 250px;
+  width: 235px;
+  height: 235px;
   border-radius: 16px;
 `;
 
 const ImageShimmer = () => {
-  return <Shimmer height={250} width={250} className="image-shimmer" />;
+  return <Shimmer height={235} width={235} className="image-shimmer" />;
 };
 
 const NftName = styled.h5`

@@ -72,7 +72,9 @@ function App() {
         <Form onSubmit={handleSubmit}>
           <SearchIcon />
           <Input
+            autoFocus
             value={address}
+            type="text"
             placeholder="Input an NFT's mint account"
             onChange={(e) => setAddress(e.target.value)}
           />
@@ -153,6 +155,7 @@ const Input = styled.input`
 
   @media (max-width: 500px) {
     width: 65vw;
+    font-size: 12px;
   }
 `;
 
