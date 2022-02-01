@@ -1,5 +1,6 @@
 import format from "date-fns/format";
-import { PublicKey } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import BN from "bignumber.js";
 
 /**
  * Format a date.
@@ -16,10 +17,31 @@ export const formatDate = (date: number) => {
 /**
  * Format a fiat price.
  */
-export const formatFiatPrice = (price: number) => {
-  const usd = (5 * price).toFixed(2);
-  const result = `$${usd} USD`;
+export const formatFiatPrice = (sol: BN, price: BN) => {
+  const usd = sol.times(price);
+  const formattedPrice = formatNumber(usd);
+  const result = `$${formattedPrice} USD`;
   return result;
+};
+
+/**
+ * Standard formatting for a number. Expects bignumber.js input.
+ */
+export const formatNumber = (x: BN) => {
+  return x.toFormat(2, {
+    groupSize: 3,
+    groupSeparator: ",",
+    decimalSeparator: ".",
+  });
+};
+
+/**
+ * Convert lamports to SOL.
+ */
+export const lamportsToSOL = (lamports: number) => {
+  const amount = new BN(lamports);
+  const SOL = amount.div(new BN(LAMPORTS_PER_SOL));
+  return SOL;
 };
 
 /**

@@ -60,7 +60,6 @@ export interface TransferTransaction extends TransactionBase {
 export interface ListingTransaction extends TransactionBase {
   type: TransactionType.Listing;
   seller: string;
-  lamportsPrice: number;
 }
 
 export interface CancelListingTransaction extends TransactionBase {
@@ -72,7 +71,7 @@ export interface SaleTransaction extends TransactionBase {
   type: TransactionType.Sale;
   seller: string;
   buyer: string;
-  lamportsPrice: number;
+  lamports: number;
 }
 
 export type TransactionVariants =

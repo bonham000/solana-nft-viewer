@@ -12,15 +12,21 @@ import {
   fetchTokenMetadata,
   fetchTransactionHistory,
 } from "../tools/web3";
-import { formatDate, formatFiatPrice } from "../tools/utils";
+import {
+  formatDate,
+  formatFiatPrice,
+  formatNumber,
+  lamportsToSOL,
+} from "../tools/utils";
 import { useInterval } from "usehooks-ts";
+import BN from "bignumber.js";
 
 const Transactions: React.FC = () => {
   // Setup various state management for this component
   const [historyLoading, setHistoryLoading] = React.useState(true);
   const [metadataLoading, setMetadataLoading] = React.useState(true);
   const [priceLoading, setPriceLoading] = React.useState(true);
-  const [solPrice, setSolPrice] = React.useState<number | null>(null);
+  const [solPrice, setSolPrice] = React.useState<BN | null>(null);
   const [nftMetadata, setNftMetadata] = React.useState<NftMetadata | null>(
     null,
   );
@@ -41,11 +47,20 @@ const Transactions: React.FC = () => {
     fetchPriceData();
   }, 10000);
 
+  // Reset state when the address changes
+  React.useEffect(() => {
+    setHistory([]);
+    setNftMetadata(null);
+    setHistoryLoading(true);
+    setMetadataLoading(true);
+  }, [address]);
+
   React.useEffect(() => {
     const fetchHistory = async () => {
       const result = await fetchTransactionHistory(address);
       setHistoryLoading(false);
       setHistory(result);
+      console.log(result);
     };
 
     fetchHistory();
@@ -107,25 +122,28 @@ const Transactions: React.FC = () => {
  */
 const PriceData = (props: {
   tx: TransactionVariants;
-  solPrice: number | null;
+  solPrice: BN | null;
   priceLoading: boolean;
 }) => {
   const { tx, solPrice, priceLoading } = props;
   const { type } = tx;
 
-  if (type === TransactionType.Mint || type === TransactionType.Transfer) {
+  if (type !== TransactionType.Sale) {
     return <TxRight />;
   }
 
+  const lamports = tx.lamports;
+  const sol = lamportsToSOL(lamports);
+
   return (
     <TxRight>
-      <TxHeading>5 ◎</TxHeading>
+      <TxHeading>{formatNumber(sol)} ◎</TxHeading>
       {priceLoading ? (
         <TxSubHeading>Loading...</TxSubHeading>
       ) : solPrice === null ? (
         <TxSubHeading>Failed to fetch SOL price...</TxSubHeading>
       ) : (
-        <TxSubHeading>{formatFiatPrice(solPrice)}</TxSubHeading>
+        <TxSubHeading>{formatFiatPrice(sol, solPrice)}</TxSubHeading>
       )}
     </TxRight>
   );
@@ -145,6 +163,7 @@ const ImageContainer = styled.div`
   align-items: center;
   justify-content: center;
   flex-direction: column;
+  height: 330px;
 
   .image-shimmer {
     border-radius: 16px;

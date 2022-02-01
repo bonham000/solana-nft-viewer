@@ -1,6 +1,7 @@
 import { clusterApiUrl, PublicKey, Connection } from "@solana/web3.js";
 import { programs } from "@metaplex/js";
 import {
+  CancelListingTransaction,
   ListingTransaction,
   MintTransaction,
   NftMetadata,
@@ -9,6 +10,7 @@ import {
   TransactionVariants,
   TransferTransaction,
 } from "./types";
+import BN from "bignumber.js";
 
 // Avoid RPC rate limits....
 const wait = async (time = 250) => {
@@ -37,7 +39,7 @@ export const fetchSolPrice = async () => {
 
   const response = await fetch(url);
   const price: SolPriceResponse = await response.json();
-  return price.solana.usd;
+  return new BN(price.solana.usd);
 };
 
 /**
@@ -142,9 +144,15 @@ export const fetchTransactionHistory = async (address: string) => {
       if (innerInstructions) {
         for (const innerInstruction of innerInstructions) {
           if (innerInstruction) {
+            let isSaleTransaction = false;
+            let buyer = "";
+            let lamportsTransferred = 0;
+
             for (const inx of innerInstruction.instructions) {
               if ("parsed" in inx) {
-                // TODO: Find cancel listing transactions
+                if (inx.parsed.type === "transfer") {
+                  lamportsTransferred += inx.parsed.info.lamports;
+                }
 
                 if (inx.parsed.type === "setAuthority") {
                   const { authority, newAuthority } = inx.parsed.info;
@@ -152,24 +160,39 @@ export const fetchTransactionHistory = async (address: string) => {
                     const listingTransaction: ListingTransaction = {
                       tx,
                       type: TransactionType.Listing,
-                      lamportsPrice: NaN,
                       seller: authority,
                       signatures: tx.transaction.signatures,
                     };
                     activity.push(listingTransaction);
                   } else if (authority === MAGIC_EDEN_LISTING_ACCOUNT) {
-                    const saleTransaction: SaleTransaction = {
-                      tx,
-                      type: TransactionType.Sale,
-                      lamportsPrice: NaN,
-                      seller: "???",
-                      buyer: newAuthority,
-                      signatures: tx.transaction.signatures,
-                    };
-                    activity.push(saleTransaction);
+                    if (innerInstruction.instructions.length === 1) {
+                      const cancelListingTransaction: CancelListingTransaction =
+                        {
+                          tx,
+                          type: TransactionType.CancelListing,
+                          seller: newAuthority,
+                          signatures: tx.transaction.signatures,
+                        };
+                      activity.push(cancelListingTransaction);
+                    } else {
+                      isSaleTransaction = true;
+                      buyer = newAuthority;
+                    }
                   }
                 }
               }
+            }
+
+            if (isSaleTransaction) {
+              const saleTransaction: SaleTransaction = {
+                tx,
+                type: TransactionType.Sale,
+                lamports: lamportsTransferred,
+                seller: "???",
+                buyer,
+                signatures: tx.transaction.signatures,
+              };
+              activity.push(saleTransaction);
             }
           }
         }
