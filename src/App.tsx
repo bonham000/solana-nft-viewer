@@ -137,7 +137,7 @@ const Input = styled.input`
   padding-right: 42px;
 
   @media (max-width: 500px) {
-    width: 80vw;
+    width: 65vw;
   }
 `;
 
