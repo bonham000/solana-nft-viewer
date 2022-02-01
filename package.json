@@ -5,7 +5,7 @@
   "scripts": {
     "tsc": "tsc",
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && mv build/index.html build/200.html",
     "test": "react-scripts test",
     "test:unit": "react-scripts test --watchAll=false",
     "eject": "react-scripts eject",
