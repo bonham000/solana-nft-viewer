@@ -24,6 +24,7 @@ import { COLORS as C } from "./tools/colors";
  */
 
 function App() {
+  const searchInput = React.useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const [address, setAddress] = React.useState("");
@@ -55,6 +56,12 @@ function App() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validateAddressAsPublicKey(address)) {
+      // Blur input on submit
+      if (searchInput.current) {
+        // @ts-ignore - blur method should exist
+        searchInput.current.blur();
+      }
+
       navigate(`/txs/${address}`);
     } else {
       toast.error("Please check the address format.");
@@ -73,8 +80,9 @@ function App() {
           <SearchIcon />
           <Input
             autoFocus
-            value={address}
             type="text"
+            value={address}
+            ref={searchInput}
             placeholder="Input an NFT's mint account"
             onChange={(e) => setAddress(e.target.value)}
           />
