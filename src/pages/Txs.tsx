@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { useLocation } from "react-router-dom";
+import { Shimmer } from "react-shimmer";
 import {
   NftMetadata,
   TransactionType,
@@ -15,16 +16,21 @@ import { formatDate, formatFiatPrice } from "../tools/utils";
 import { useInterval } from "usehooks-ts";
 
 const Transactions: React.FC = () => {
-  const [loading, setLoading] = React.useState(true);
+  // Setup various state management for this component
+  const [historyLoading, setHistoryLoading] = React.useState(true);
+  const [metadataLoading, setMetadataLoading] = React.useState(true);
   const [priceLoading, setPriceLoading] = React.useState(true);
   const [solPrice, setSolPrice] = React.useState<number | null>(null);
   const [nftMetadata, setNftMetadata] = React.useState<NftMetadata | null>(
     null,
   );
   const [history, setHistory] = React.useState<TransactionVariants[]>([]);
+
+  // Derive current address from URL location state
   const location = useLocation();
   const address = location.pathname.replace("/txs/", "");
 
+  // Fetch/update SOL price on a 10 second interval
   useInterval(() => {
     const fetchPriceData = async () => {
       const result = await fetchSolPrice();
@@ -38,6 +44,7 @@ const Transactions: React.FC = () => {
   React.useEffect(() => {
     const fetchHistory = async () => {
       const result = await fetchTransactionHistory(address);
+      setHistoryLoading(false);
       setHistory(result);
     };
 
@@ -47,7 +54,7 @@ const Transactions: React.FC = () => {
   React.useEffect(() => {
     const fetchHistory = async () => {
       const result = await fetchTokenMetadata(address);
-      setLoading(false);
+      setMetadataLoading(false);
       setNftMetadata(result);
     };
 
@@ -56,7 +63,12 @@ const Transactions: React.FC = () => {
 
   return (
     <TxContainer>
-      {loading && <LoadingText>Loading address history...</LoadingText>}
+      {metadataLoading && (
+        <ImageContainer>
+          <ImageShimmer />
+          <div style={{ height: 137 }} />
+        </ImageContainer>
+      )}
       {nftMetadata && (
         <ImageContainer>
           <NFT src={nftMetadata.image} alt={`${nftMetadata.name} NFT`} />
@@ -64,6 +76,7 @@ const Transactions: React.FC = () => {
         </ImageContainer>
       )}
       <TxTitle>ACTIVITY</TxTitle>
+      {historyLoading && <LoadingText>Loading...</LoadingText>}
       {history.map((tx) => {
         const time = tx.tx.blockTime;
         return (
@@ -88,6 +101,9 @@ const Transactions: React.FC = () => {
   );
 };
 
+/**
+ * Handle rendering price data for an NFT activity record.
+ */
 const PriceData = (props: {
   tx: TransactionVariants;
   solPrice: number | null;
@@ -128,6 +144,10 @@ const ImageContainer = styled.div`
   align-items: center;
   justify-content: center;
   flex-direction: column;
+
+  .image-shimmer {
+    border-radius: 16px;
+  }
 `;
 
 const NFT = styled.img`
@@ -135,6 +155,10 @@ const NFT = styled.img`
   height: 250px;
   border-radius: 16px;
 `;
+
+const ImageShimmer = () => {
+  return <Shimmer height={250} width={250} className="image-shimmer" />;
+};
 
 const NftName = styled.h5`
   font-size: 26px;
@@ -145,6 +169,7 @@ const NftName = styled.h5`
 
 const LoadingText = styled.p`
   font-size: 14px;
+  color: rgb(145, 145, 145);
 `;
 
 const TxTitle = styled.h2`

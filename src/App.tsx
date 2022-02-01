@@ -3,11 +3,15 @@ import styled from "styled-components";
 import { useNavigate, useLocation, Routes, Route } from "react-router-dom";
 import Transactions from "./pages/Txs";
 import { Link } from "react-router-dom";
+import { FaSearch, FaTimesCircle } from "react-icons/fa";
 
 function App() {
   const navigate = useNavigate();
+  // Derive current address from URL location state
   const location = useLocation();
-  const [address, setAddress] = React.useState("");
+  const urlAddress = location.pathname.replace("/txs/", "");
+
+  const [address, setAddress] = React.useState(urlAddress);
 
   // Reset entered address on navigation back to base route
   React.useEffect(() => {
@@ -30,13 +34,15 @@ function App() {
         </Link>
       </Header>
       <Body>
-        <form onSubmit={handleSubmit}>
+        <Form onSubmit={handleSubmit}>
+          <SearchIcon />
           <Input
             value={address}
             placeholder="Input an NFT's mint account"
             onChange={(e) => setAddress(e.target.value)}
           />
-        </form>
+          <ClearIcon onClick={() => setAddress("")} />
+        </Form>
         <Routes>
           <Route path="/" element={null} />
           <Route path="/txs/:address" element={<Transactions />} />
@@ -86,6 +92,29 @@ const Body = styled.div`
   flex-direction: column;
 `;
 
+const Form = styled.form`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const SearchIcon = styled(FaSearch)`
+  position: relative;
+  right: -32px;
+  color: rgb(150, 150, 150);
+`;
+
+const ClearIcon = styled(FaTimesCircle)`
+  position: relative;
+  left: -32px;
+  color: rgb(150, 150, 150);
+
+  :hover {
+    cursor: pointer;
+    color: rgb(75, 75, 75);
+  }
+`;
+
 const Input = styled.input`
   margin-top: 48px;
   margin-bottom: 48px;
@@ -94,8 +123,8 @@ const Input = styled.input`
   border-radius: 48px;
   border: 1px solid rgb(215, 215, 215);
   outline: none;
-  padding-left: 32px;
-  padding-right: 32px;
+  padding-left: 42px;
+  padding-right: 42px;
 
   @media (max-width: 500px) {
     width: 80vw;
