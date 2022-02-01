@@ -1,11 +1,26 @@
 import React from "react";
 import styled from "styled-components";
-import { useNavigate, useLocation, Routes, Route } from "react-router-dom";
-import Transactions from "./pages/Txs";
+import {
+  useNavigate,
+  useLocation,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import NftDetails from "./pages/NftDetails";
 import { Link } from "react-router-dom";
 import { FaSearch, FaTimesCircle } from "react-icons/fa";
 import { validateAddressAsPublicKey } from "./tools/utils";
 import toast, { Toaster } from "react-hot-toast";
+
+/** ===========================================================================
+ * App Component
+ * ----------------------------------------------------------------------------
+ * This is the main app component. It renders the header, NFT mint address
+ * search input bar, and the app routes. Currently, there's only one route
+ * which displays the details for a given NFT mint address.
+ * ============================================================================
+ */
 
 function App() {
   const location = useLocation();
@@ -14,14 +29,14 @@ function App() {
 
   // Reset entered address on navigation back to base route
   React.useEffect(() => {
-    console.log("useEffect");
     const { pathname } = location;
     if (pathname.includes("/txs/")) {
-      const urlAddress = location.pathname.replace("/txs/", "");
+      const urlAddress = pathname.replace("/txs/", "");
       if (validateAddressAsPublicKey(urlAddress)) {
+        // If the address is valid select it
         setAddress(urlAddress);
       } else {
-        console.log("wrong address");
+        // Otherwise redirect to / and notify the user with a toast
         toast.error("Invalid address provided in url");
         navigate("/");
       }
@@ -46,7 +61,7 @@ function App() {
   };
 
   return (
-    <div>
+    <>
       <Header>
         <Link to="/" style={{ textDecoration: "none" }}>
           <HeaderTitle>nifty information</HeaderTitle>
@@ -64,13 +79,19 @@ function App() {
         </Form>
         <Routes>
           <Route path="/" element={null} />
-          <Route path="/txs/:address" element={<Transactions />} />
+          <Route path="/txs/:address" element={<NftDetails />} />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Body>
       <Toaster />
-    </div>
+    </>
   );
 }
+
+/** ===========================================================================
+ * Styled Components
+ * ============================================================================
+ */
 
 const Header = styled.div`
   height: 55px;
@@ -118,6 +139,22 @@ const Form = styled.form`
   justify-content: center;
 `;
 
+const Input = styled.input`
+  margin-top: 48px;
+  margin-bottom: 48px;
+  width: 450px;
+  height: 45px;
+  border-radius: 48px;
+  border: 1px solid rgb(215, 215, 215);
+  outline: none;
+  padding-left: 42px;
+  padding-right: 42px;
+
+  @media (max-width: 500px) {
+    width: 65vw;
+  }
+`;
+
 const SearchIcon = styled(FaSearch)`
   position: relative;
   right: -32px;
@@ -135,20 +172,9 @@ const ClearIcon = styled(FaTimesCircle)`
   }
 `;
 
-const Input = styled.input`
-  margin-top: 48px;
-  margin-bottom: 48px;
-  width: 450px;
-  height: 45px;
-  border-radius: 48px;
-  border: 1px solid rgb(215, 215, 215);
-  outline: none;
-  padding-left: 42px;
-  padding-right: 42px;
-
-  @media (max-width: 500px) {
-    width: 65vw;
-  }
-`;
+/** ===========================================================================
+ * Export
+ * ============================================================================
+ */
 
 export default App;

@@ -9,13 +9,14 @@ import {
   TransactionType,
   TransactionVariants,
   TransferTransaction,
-} from "./web3-types";
+} from "./types";
 import BN from "bignumber.js";
 
 const connection = new Connection(clusterApiUrl("mainnet-beta"));
 
-const MAGIC_EDEN_PROGRAM_ID = "MEisE1HzehtrDpAAT8PnLHjpSSkRYakotTuJRPjTpo8";
-
+// This is the mainnet authority which is used by Magic Eden for listing
+// NFTs. The address is used to identify Magic Eden marketplace related
+// transactions.
 const MAGIC_EDEN_LISTING_ACCOUNT =
   "GUfCR9mK6azb9vcpsxgXyj7XRPAKJd4KMHTTVvtncGgp";
 
@@ -26,7 +27,7 @@ interface SolPriceResponse {
 }
 
 /**
- * Fetch current SOL price.
+ * Fetch current SOL price using the CoinGecko API.
  */
 export const fetchSolPrice = async () => {
   const url =
@@ -38,7 +39,9 @@ export const fetchSolPrice = async () => {
 };
 
 /**
- * Fetch NFT token metadata.
+ * Fetch NFT token metadata. This function derives the on-chain metadata using
+ * the Metaplex SDK and then fetches the full metadata record stored on
+ * Arweave.
  */
 export const fetchTokenMetadata = async (
   address: string,
@@ -53,22 +56,37 @@ export const fetchTokenMetadata = async (
 
 /**
  * Fetch NFT activity history.
+ *
+ * This function goes through a few steps:
+ *
+ * 1. Fetch transaction history for given address
+ * 2. Find mint and transfer transactions, record token accounts using these
+ * 3. Search transaction history of each token account
+ * 4. Identify Magic Eden transactions using Magic Eden program ID
+ * 5. Sort and return the results
+ *
+ * A few points to comment on:
+ *
+ * - This function makes a lot of API calls and can easily get rate limited
+ *   by RPC nodes.
+ * - The logic is really guessing to identify Magic Eden transactions. Ideally,
+ *   if one knew the structure of the Magic Eden programs one could identify
+ *   and deserialize these transactions more reliably.
  */
-export const fetchTransactionHistory = async (address: string) => {
+export const fetchMagicEdenActivityHistory = async (address: string) => {
+  // First get all the transactions for the given mint address
   const pk = new PublicKey(address);
   const signatures = await connection.getSignaturesForAddress(pk);
-
-  console.log(
-    `Found ${signatures.length} signatures for address ${pk.toBase58()}`,
-  );
-
-  let txs = await connection.getParsedConfirmedTransactions(
+  const txs = await connection.getParsedConfirmedTransactions(
     signatures.map((x) => x.signature),
   );
 
   const activity: TransactionVariants[] = [];
   const tokenAccounts: PublicKey[] = [];
 
+  // Iterate through all the transactions and identify transfers and the
+  // original mint transactions. Record associated accounts, which will be
+  // checked next.
   for (const tx of txs) {
     const instructions = tx?.transaction.message.instructions;
     if (instructions) {
@@ -78,7 +96,6 @@ export const fetchTransactionHistory = async (address: string) => {
 
           // Mint transaction
           if (type === "mintTo") {
-            console.log(tx);
             const minter = inx.parsed.info.mintAuthority;
             const mintTransaction: MintTransaction = {
               tx,
@@ -113,42 +130,41 @@ export const fetchTransactionHistory = async (address: string) => {
     }
   }
 
-  console.log("Token accounts: ", tokenAccounts);
-
+  // For each identified token account for the given mint address, search
+  // its transaction history and identify transactions related to Magic Eden
+  // using Magic Eden program IDs. Record these transactions in the activity
+  // history.
   for (const account of tokenAccounts) {
     const signatures = await connection.getSignaturesForAddress(account);
-    const magicEdenTransactions = [];
     const txs = await connection.getParsedConfirmedTransactions(
       signatures.map((x) => x.signature),
     );
 
     for (const tx of txs) {
-      const accounts = tx?.transaction.message.accountKeys;
-      if (accounts) {
-        for (const account of accounts) {
-          if (account.pubkey.toBase58() === MAGIC_EDEN_PROGRAM_ID) {
-            magicEdenTransactions.push(tx);
-          }
-        }
-      }
-
       const innerInstructions = tx?.meta?.innerInstructions;
       if (innerInstructions) {
         for (const innerInstruction of innerInstructions) {
           if (innerInstruction) {
             let isSaleTransaction = false;
             let buyer = "";
-            let lamportsTransferred = 0;
+            let lamportsTransferred = new BN(0);
 
             for (const inx of innerInstruction.instructions) {
               if ("parsed" in inx) {
                 if (inx.parsed.type === "transfer") {
-                  lamportsTransferred += inx.parsed.info.lamports;
+                  lamportsTransferred.plus(inx.parsed.info.lamports);
                 }
 
                 if (inx.parsed.type === "setAuthority") {
                   const { authority, newAuthority } = inx.parsed.info;
+
                   if (newAuthority === MAGIC_EDEN_LISTING_ACCOUNT) {
+                    // If the newAuthority is the Magic Eden listing account,
+                    // this is a listing transaction.
+                    // NOTE: It's unclear how to get the listing price for a
+                    // listing transaction data. It seems this information
+                    // may only be included in the Magic Eden encoded
+                    // transaction data.
                     const listingTransaction: ListingTransaction = {
                       tx,
                       type: TransactionType.Listing,
@@ -157,6 +173,9 @@ export const fetchTransactionHistory = async (address: string) => {
                     };
                     activity.push(listingTransaction);
                   } else if (authority === MAGIC_EDEN_LISTING_ACCOUNT) {
+                    // If the current authority is the Magic Eden listing
+                    // account it is a cancel listing transaction if there is
+                    // only one instruction. Otherwise it is a sale.
                     if (innerInstruction.instructions.length === 1) {
                       const cancelListingTransaction: CancelListingTransaction =
                         {
@@ -167,6 +186,7 @@ export const fetchTransactionHistory = async (address: string) => {
                         };
                       activity.push(cancelListingTransaction);
                     } else {
+                      // Otherwise it is a sale
                       isSaleTransaction = true;
                       buyer = newAuthority;
                     }
@@ -175,6 +195,8 @@ export const fetchTransactionHistory = async (address: string) => {
               }
             }
 
+            // If it is a sale, all the transferred lamports in the transaction
+            // represent the total sale price.
             if (isSaleTransaction) {
               const saleTransaction: SaleTransaction = {
                 tx,
@@ -191,7 +213,7 @@ export const fetchTransactionHistory = async (address: string) => {
     }
   }
 
-  // Sort all discovered transactions by block time
+  // Sort all discovered transactions by block time to get the correct order
   const history = activity.sort((a, b) => {
     const aTime = a.tx.blockTime;
     const bTime = b.tx.blockTime;

@@ -19,3 +19,9 @@ Monday, January 31, 2022:
 - Build out UI elements to view NFT history
 - Fetch and display NFT metadata
 - Fetch SOL price for displaying USD prices
+
+Tuesday, February 1, 2022:
+12pm - 2pm (2 hours)
+- Implement Result type to handle API response states: loading, error, ok
+- Add more tests
+- Refactor and cleanup code, add comments

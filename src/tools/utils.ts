@@ -55,9 +55,8 @@ export const formatNumber = (x: BN) => {
 /**
  * Convert lamports to SOL.
  */
-export const lamportsToSOL = (lamports: number) => {
-  const amount = new BN(lamports);
-  const SOL = amount.div(new BN(LAMPORTS_PER_SOL));
+export const lamportsToSOL = (lamports: BN) => {
+  const SOL = lamports.div(new BN(LAMPORTS_PER_SOL));
   return SOL;
 };
 
@@ -80,7 +79,9 @@ export const abbreviateAddress = (address: string) => {
   return `${address.slice(0, 4)}...${address.slice(address.length - 4)}`;
 };
 
-// Copy some text to the clipboard
+/**
+ * Copy some text to the clipboard.
+ */
 export const copyToClipboard = (text: string) => {
   const el = document.createElement("textarea");
   el.value = text;

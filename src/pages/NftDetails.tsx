@@ -6,11 +6,11 @@ import {
   NftMetadata,
   TransactionType,
   TransactionVariants,
-} from "../tools/web3-types";
+} from "../tools/types";
 import {
   fetchSolPrice,
   fetchTokenMetadata,
-  fetchTransactionHistory,
+  fetchMagicEdenActivityHistory,
 } from "../tools/web3";
 import {
   formatDate,
@@ -24,19 +24,27 @@ import {
 import { useInterval } from "usehooks-ts";
 import BN from "bignumber.js";
 import toast from "react-hot-toast";
-import {
-  ResultLoading,
-  Result,
-  Ok,
-  Err,
-  matchResult,
-} from "../tools/result-type";
+import { ResultLoading, Result, Ok, Err, matchResult } from "../tools/result";
 
-type TokenHistoryState = Result<TransactionVariants[], Error>;
+/** ===========================================================================
+ * NftDetails Component
+ * ----------------------------------------------------------------------------
+ * This is the main component which renders the image, name and activity
+ * history for a given NFT. This component handles fetching and displaying
+ * all of these details.
+ * ============================================================================
+ */
+
 type PriceState = Result<BN, Error>;
 type NftMetadataState = Result<NftMetadata, Error>;
+type TokenHistoryState = Result<TransactionVariants[], Error>;
 
-const Transactions: React.FC = () => {
+const NftDetails: React.FC = () => {
+  // Derive current address from URL location state
+  const location = useLocation();
+  const address = location.pathname.replace("/txs/", "");
+
+  // Setup state
   const [priceState, setPriceState] = useState<PriceState>(ResultLoading());
   const [nftMetadataState, setNftMetadataState] = useState<NftMetadataState>(
     ResultLoading(),
@@ -45,34 +53,17 @@ const Transactions: React.FC = () => {
     ResultLoading(),
   );
 
-  // Derive current address from URL location state
-  const location = useLocation();
-  const address = location.pathname.replace("/txs/", "");
-
-  // Fetch/update SOL price on a 10 second interval
-  useInterval(() => {
-    const fetchPriceData = async () => {
-      try {
-        const result = await fetchSolPrice();
-        setPriceState(Ok(result));
-      } catch (err) {
-        setPriceState(Err(err as Error));
-      }
-    };
-
-    fetchPriceData();
-  }, 10000);
-
   // Reset state when the address changes
   React.useEffect(() => {
     setNftMetadataState(ResultLoading());
     setTokenHistoryState(ResultLoading());
   }, [address]);
 
+  // Handle fetching NFT activity history
   React.useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const result = await fetchTransactionHistory(address);
+        const result = await fetchMagicEdenActivityHistory(address);
         setTokenHistoryState(Ok(result));
       } catch (err) {
         setTokenHistoryState(Err(err as Error));
@@ -82,6 +73,7 @@ const Transactions: React.FC = () => {
     fetchHistory();
   }, [address]);
 
+  // Handle fetching NFT metadata
   React.useEffect(() => {
     const fetchHistory = async () => {
       try {
@@ -94,6 +86,20 @@ const Transactions: React.FC = () => {
 
     fetchHistory();
   }, [address]);
+
+  // Handling fetching current SOL USD price. Refresh every 10 seconds.
+  useInterval(() => {
+    const fetchPriceData = async () => {
+      try {
+        const result = await fetchSolPrice();
+        setPriceState(Ok(result));
+      } catch (err) {
+        setPriceState(Err(err as Error));
+      }
+    };
+
+    fetchPriceData();
+  }, 10000);
 
   return (
     <TxContainer>
@@ -117,30 +123,17 @@ const Transactions: React.FC = () => {
         ),
       })}
       <TxTitle>ACTIVITY</TxTitle>
-
       {matchResult(tokenHistoryState, {
-        ok: (history) => {
-          return (
-            <>
-              {history.map((tx) => {
-                const time = tx.tx.blockTime;
-                return (
-                  <Tx key={tx.signatures[0]}>
-                    <TxLeft>
-                      <TxHeading>{renderTransactionTitle(tx)}</TxHeading>
-                      {time ? (
-                        <TxSubHeading>{formatDate(time * 1000)}</TxSubHeading>
-                      ) : (
-                        <TxSubHeading>Unknown block</TxSubHeading>
-                      )}
-                    </TxLeft>
-                    <PriceData tx={tx} priceState={priceState} />
-                  </Tx>
-                );
-              })}
-            </>
-          );
-        },
+        ok: (history) =>
+          history.map((tx) => (
+            <Tx key={tx.signatures[0]}>
+              <TxLeft>
+                <TxHeading>{renderTransactionTitle(tx)}</TxHeading>
+                <RenderDateTime time={tx.tx.blockTime} />
+              </TxLeft>
+              <PriceDataComponent tx={tx} priceState={priceState} />
+            </Tx>
+          )),
         loading: () => <LoadingText>Loading...</LoadingText>,
         err: () => <ErrorText>Failed to load NFT Metadata</ErrorText>,
       })}
@@ -148,36 +141,10 @@ const Transactions: React.FC = () => {
   );
 };
 
-/**
- * Handle rendering price data for an NFT activity record.
+/** ===========================================================================
+ * Styled Components and Helpers
+ * ============================================================================
  */
-const PriceData = (props: {
-  tx: TransactionVariants;
-  priceState: PriceState;
-}) => {
-  const { tx, priceState } = props;
-  const { type } = tx;
-
-  if (type !== TransactionType.Sale) {
-    return <TxRight />;
-  }
-
-  const lamports = tx.lamports;
-  const sol = lamportsToSOL(lamports);
-
-  return (
-    <TxRight>
-      <TxHeading>{formatNumber(sol)} ◎</TxHeading>
-      {matchResult(priceState, {
-        ok: (solPrice) => (
-          <TxSubHeading>{formatFiatPrice(sol, solPrice)}</TxSubHeading>
-        ),
-        loading: () => <TxSubHeading>Loading prices...</TxSubHeading>,
-        err: () => <TxSubHeading>Error loading prices</TxSubHeading>,
-      })}
-    </TxRight>
-  );
-};
 
 const TxContainer = styled.div`
   width: 500px;
@@ -271,6 +238,49 @@ const TxSubHeading = styled(TxText)`
 `;
 
 /**
+ * Render date time for a given transaction blockTime.
+ */
+const RenderDateTime = (props: { time: number | null | undefined }) => {
+  if (typeof props.time === "number") {
+    return <TxSubHeading>{formatDate(props.time * 1000)}</TxSubHeading>;
+  } else {
+    return <TxSubHeading>Unknown block time</TxSubHeading>;
+  }
+};
+
+/**
+ * Handle rendering price data for an NFT activity record.
+ */
+const PriceDataComponent = (props: {
+  tx: TransactionVariants;
+  priceState: PriceState;
+}) => {
+  const { tx, priceState } = props;
+  const { type } = tx;
+
+  // Only the Sale transaction includes a price, currently.
+  if (type !== TransactionType.Sale) {
+    return <TxRight />;
+  }
+
+  const lamports = tx.lamports;
+  const sol = lamportsToSOL(lamports);
+
+  return (
+    <TxRight>
+      <TxHeading>{formatNumber(sol)} ◎</TxHeading>
+      {matchResult(priceState, {
+        ok: (solPrice) => (
+          <TxSubHeading>{formatFiatPrice(sol, solPrice)}</TxSubHeading>
+        ),
+        loading: () => <TxSubHeading>Loading prices...</TxSubHeading>,
+        err: () => <TxSubHeading>Error loading prices</TxSubHeading>,
+      })}
+    </TxRight>
+  );
+};
+
+/**
  * Handle rendering the transaction summary title for a given transaction.
  */
 const renderTransactionTitle = (tx: TransactionVariants) => {
@@ -311,6 +321,10 @@ const renderTransactionTitle = (tx: TransactionVariants) => {
   }
 };
 
+/**
+ * Render an address. This handles abbreviating the address and wrapping
+ * it in a click handler which copies the address to the clipboard.
+ */
 const RenderAddress = (props: { address: string }) => {
   const { address } = props;
   return (
@@ -331,4 +345,9 @@ const ClickableAddress = styled.span`
   }
 `;
 
-export default Transactions;
+/** ===========================================================================
+ * Export
+ * ============================================================================
+ */
+
+export default NftDetails;

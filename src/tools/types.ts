@@ -1,3 +1,4 @@
+import BN from "bignumber.js";
 import { ParsedConfirmedTransaction } from "@solana/web3.js";
 
 interface Attribute {
@@ -70,9 +71,14 @@ export interface CancelListingTransaction extends TransactionBase {
 export interface SaleTransaction extends TransactionBase {
   type: TransactionType.Sale;
   buyer: string;
-  lamports: number;
+  lamports: BN;
 }
 
+/**
+ * Transaction variants which are currently used in this app. Many other
+ * transactions are possible but these represent the specific variants which
+ * are recognized and displayed here.
+ */
 export type TransactionVariants =
   | MintTransaction
   | TransferTransaction

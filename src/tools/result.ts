@@ -36,7 +36,7 @@ export interface ResultMatcher<T, E, R1, R2, R3> {
 }
 
 /**
- * 'match' statement for a Result which mimics the match statement semantics
+ * Match-like statement for a Result which mimics the match statement semantics
  * in Rust. Each potential variant (loading, error, ok) must be handled
  * when using this.
  */

@@ -1,6 +1,8 @@
 # Nifty Information
 
-View some information about NFTs on Solana.
+View details about a Solana NFT given its mint address.
+
+## Create React App Readme
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
