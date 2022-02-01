@@ -23,6 +23,7 @@ import {
 } from "../tools/utils";
 import { useInterval } from "usehooks-ts";
 import BN from "bignumber.js";
+import { COLORS as C } from "../tools/colors";
 import toast from "react-hot-toast";
 import { ResultLoading, Result, Ok, Err, matchResult } from "../tools/result";
 
@@ -186,17 +187,17 @@ const NftName = styled.h5`
 
 const LoadingText = styled.p`
   font-size: 14px;
-  color: rgb(145, 145, 145);
+  color: ${C.grayLight};
 `;
 
 const ErrorText = styled.p`
   font-size: 14px;
-  color: rgb(145, 145, 145);
+  color: ${C.grayLight};
 `;
 
 const TxTitle = styled.h2`
   font-size: 14px;
-  color: rgb(145, 145, 145);
+  color: ${C.grayLight};
 `;
 
 const Tx = styled.div`
@@ -205,7 +206,7 @@ const Tx = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(175, 175, 175, 0.5);
+  border-bottom: 1px solid ${C.whiteLight};
 
   :last-child {
     border: none;
@@ -234,7 +235,7 @@ const TxSubHeading = styled(TxText)`
   margin-top: 6px;
   margin-bottom: 6px;
   font-size: 14px;
-  color: rgb(150, 150, 150);
+  color: ${C.gray};
 `;
 
 /**

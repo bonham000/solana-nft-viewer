@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { FaSearch, FaTimesCircle } from "react-icons/fa";
 import { validateAddressAsPublicKey } from "./tools/utils";
 import toast, { Toaster } from "react-hot-toast";
+import { COLORS as C } from "./tools/colors";
 
 /** ===========================================================================
  * App Component
@@ -100,21 +101,21 @@ const Header = styled.div`
   align-items: center;
   justify-content: center;
 
-  background: rgb(80, 80, 239);
+  background: ${C.purpleGradientBase};
   background: -moz-linear-gradient(
     90deg,
-    rgba(80, 80, 239, 1) 20%,
-    rgba(128, 94, 250, 1) 78%
+    ${C.purpleGradientLeft} 20%,
+    ${C.purpleGradientRight} 78%
   );
   background: -webkit-linear-gradient(
     90deg,
-    rgba(80, 80, 239, 1) 20%,
-    rgba(128, 94, 250, 1) 78%
+    ${C.purpleGradientLeft} 20%,
+    ${C.purpleGradientRight} 78%
   );
   background: linear-gradient(
     90deg,
-    rgba(80, 80, 239, 1) 20%,
-    rgba(128, 94, 250, 1) 78%
+    ${C.purpleGradientLeft} 20%,
+    ${C.purpleGradientRight} 78%
   );
 `;
 
@@ -145,7 +146,7 @@ const Input = styled.input`
   width: 450px;
   height: 45px;
   border-radius: 48px;
-  border: 1px solid rgb(215, 215, 215);
+  border: 1px solid ${C.whiteLight};
   outline: none;
   padding-left: 42px;
   padding-right: 42px;
@@ -158,17 +159,17 @@ const Input = styled.input`
 const SearchIcon = styled(FaSearch)`
   position: relative;
   right: -32px;
-  color: rgb(150, 150, 150);
+  color: ${C.gray};
 `;
 
 const ClearIcon = styled(FaTimesCircle)`
   position: relative;
   left: -32px;
-  color: rgb(150, 150, 150);
+  color: ${C.gray};
 
   :hover {
     cursor: pointer;
-    color: rgb(75, 75, 75);
+    color: ${C.darkMedium};
   }
 `;
 
