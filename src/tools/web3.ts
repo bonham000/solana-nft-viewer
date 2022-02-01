@@ -82,7 +82,9 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
   );
 
   const activity: TransactionVariants[] = [];
-  const tokenAccounts: PublicKey[] = [];
+  const tokenAccounts: Set<string> = new Set();
+
+  console.log(`Found ${txs.length} transactions for address: ${address}`);
 
   // Iterate through all the transactions and identify transfers and the
   // original mint transactions. Record associated accounts, which will be
@@ -104,7 +106,7 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
               signatures: tx.transaction.signatures,
             };
             activity.push(mintTransaction);
-            tokenAccounts.push(new PublicKey(inx.parsed.info.account));
+            tokenAccounts.add(inx.parsed.info.account);
           }
 
           // Transfer transactions
@@ -122,7 +124,7 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
               };
 
               activity.push(transferTransaction);
-              tokenAccounts.push(new PublicKey(destination));
+              tokenAccounts.add(destination);
             }
           }
         }
@@ -130,15 +132,20 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
     }
   }
 
+  const tokenAccountsList = Array.from(tokenAccounts);
+
   // For each identified token account for the given mint address, search
   // its transaction history and identify transactions related to Magic Eden
   // using Magic Eden program IDs. Record these transactions in the activity
   // history.
-  for (const account of tokenAccounts) {
-    const signatures = await connection.getSignaturesForAddress(account);
+  for (const account of tokenAccountsList) {
+    const pk = new PublicKey(account);
+    const signatures = await connection.getSignaturesForAddress(pk);
     const txs = await connection.getParsedConfirmedTransactions(
       signatures.map((x) => x.signature),
     );
+
+    console.log(`Found ${txs.length} transactions for token account: ${pk}`);
 
     for (const tx of txs) {
       const innerInstructions = tx?.meta?.innerInstructions;

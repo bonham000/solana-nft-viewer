@@ -136,7 +136,7 @@ const NftDetails: React.FC = () => {
             </Tx>
           )),
         loading: () => <LoadingText>Loading...</LoadingText>,
-        err: () => <ErrorText>Failed to load NFT Metadata</ErrorText>,
+        err: () => <ErrorText>Failed to load NFT activity history</ErrorText>,
       })}
     </TxContainer>
   );
@@ -275,7 +275,7 @@ const PriceDataComponent = (props: {
           <TxSubHeading>{formatFiatPrice(sol, solPrice)}</TxSubHeading>
         ),
         loading: () => <TxSubHeading>Loading prices...</TxSubHeading>,
-        err: () => <TxSubHeading>Error loading prices</TxSubHeading>,
+        err: () => <TxSubHeading>Failed to load prices</TxSubHeading>,
       })}
     </TxRight>
   );

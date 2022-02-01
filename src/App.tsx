@@ -78,7 +78,7 @@ function App() {
             placeholder="Input an NFT's mint account"
             onChange={(e) => setAddress(e.target.value)}
           />
-          <ClearIcon onClick={() => setAddress("")} />
+          <ClearIcon hide={address === ""} onClick={() => setAddress("")} />
         </Form>
         <Routes>
           <Route path="/" element={null} />
@@ -145,7 +145,7 @@ const Form = styled.form`
 const Input = styled.input`
   margin-top: 48px;
   margin-bottom: 48px;
-  width: 450px;
+  width: 500px;
   height: 45px;
   border-radius: 48px;
   border: 1px solid ${C.whiteLight};
@@ -169,6 +169,10 @@ const ClearIcon = styled(FaTimesCircle)`
   position: relative;
   left: -32px;
   color: ${C.gray};
+
+  visibility: ${(props: { hide: boolean }) => {
+    return props.hide ? "hidden" : "visible";
+  }};
 
   :hover {
     cursor: pointer;
