@@ -4,14 +4,19 @@ import { useNavigate, useLocation, Routes, Route } from "react-router-dom";
 import Transactions from "./pages/Txs";
 import { Link } from "react-router-dom";
 import { FaSearch, FaTimesCircle } from "react-icons/fa";
+import { validateAddressAsPublicKey } from "./tools/utils";
+import toast, { Toaster } from "react-hot-toast";
 
 function App() {
   const navigate = useNavigate();
   // Derive current address from URL location state
   const location = useLocation();
   const urlAddress = location.pathname.replace("/txs/", "");
+  const initialAddress = validateAddressAsPublicKey(urlAddress)
+    ? urlAddress
+    : "";
 
-  const [address, setAddress] = React.useState(urlAddress);
+  const [address, setAddress] = React.useState(initialAddress);
 
   // Reset entered address on navigation back to base route
   React.useEffect(() => {
@@ -23,7 +28,11 @@ function App() {
   // Handle search address on form submit (Enter key pressed)
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    navigate(`/txs/${address}`);
+    if (validateAddressAsPublicKey(address)) {
+      navigate(`/txs/${address}`);
+    } else {
+      toast.error("Please check the address format.");
+    }
   };
 
   return (
@@ -48,6 +57,7 @@ function App() {
           <Route path="/txs/:address" element={<Transactions />} />
         </Routes>
       </Body>
+      <Toaster />
     </div>
   );
 }

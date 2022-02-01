@@ -63,17 +63,18 @@ const Transactions: React.FC = () => {
 
   return (
     <TxContainer>
-      {metadataLoading && (
+      {metadataLoading ? (
         <ImageContainer>
           <ImageShimmer />
           <div style={{ height: 137 }} />
         </ImageContainer>
-      )}
-      {nftMetadata && (
-        <ImageContainer>
-          <NFT src={nftMetadata.image} alt={`${nftMetadata.name} NFT`} />
-          <NftName>{nftMetadata.name}</NftName>
-        </ImageContainer>
+      ) : (
+        nftMetadata && (
+          <ImageContainer>
+            <NFT src={nftMetadata.image} alt={`${nftMetadata.name} NFT`} />
+            <NftName>{nftMetadata.name}</NftName>
+          </ImageContainer>
+        )
       )}
       <TxTitle>ACTIVITY</TxTitle>
       {historyLoading && <LoadingText>Loading...</LoadingText>}
