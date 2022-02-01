@@ -148,11 +148,11 @@ const Form = styled.form`
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 14px;
+  height: 128px;
 `;
 
 const Input = styled.input`
-  margin-top: 48px;
-  margin-bottom: 48px;
   width: 500px;
   height: 45px;
   border-radius: 48px;
