@@ -175,8 +175,17 @@ const NFT = styled.img`
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
 `;
 
+const ImageLoadingContainer = styled.div`
+  width: 235px;
+  height: 235px;
+`;
+
 const ImageShimmer = () => {
-  return <Shimmer height={235} width={235} className="image-shimmer" />;
+  return (
+    <ImageLoadingContainer>
+      <Shimmer height={235} width={235} className="image-shimmer" />
+    </ImageLoadingContainer>
+  );
 };
 
 const NftName = styled.h5`
