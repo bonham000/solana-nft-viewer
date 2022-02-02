@@ -14,20 +14,6 @@ import BN from "bignumber.js";
 
 const connection = new Connection(clusterApiUrl("mainnet-beta"));
 
-// This is the mainnet authority which is used by Magic Eden for listing
-// NFTs. The address is used to identify Magic Eden marketplace related
-// transactions.
-const MAGIC_EDEN_LISTING_ACCOUNT =
-  "GUfCR9mK6azb9vcpsxgXyj7XRPAKJd4KMHTTVvtncGgp";
-
-// It's not entirely clear what addresses these are, but they appear to also
-// be associated with Sale transactions. They could be more which needed to
-// be added to this list.
-const MULTI_SIG_ADDRESSES = new Set([
-  "4pUQS4Jo2dsfWzt3VgHXy3H6RYnEDd11oWPiaM2rdAPw",
-  "3D49QorJyNaL4rcpiynbuS3pRH4Y7EXEM6v6ZGaqfFGK",
-]);
-
 interface SolPriceResponse {
   solana: {
     usd: number;
@@ -63,24 +49,46 @@ export const fetchTokenMetadata = async (
   return metadata;
 };
 
+// This is the mainnet authority which is used by Magic Eden for listing
+// NFTs. The address is used to identify Magic Eden marketplace related
+// transactions.
+const MAGIC_EDEN_LISTING_ACCOUNT =
+  "GUfCR9mK6azb9vcpsxgXyj7XRPAKJd4KMHTTVvtncGgp";
+
+// It's not entirely clear what addresses these are, but they appear to also
+// be associated with Sale transactions. They could be more which needed to
+// be added to this list.
+const MULTI_SIG_ADDRESSES = new Set([
+  "4pUQS4Jo2dsfWzt3VgHXy3H6RYnEDd11oWPiaM2rdAPw",
+  "3D49QorJyNaL4rcpiynbuS3pRH4Y7EXEM6v6ZGaqfFGK",
+  "F4ghBzHFNgJxV4wEQDchU5i7n4XWWMBSaq7CuswGiVsr",
+]);
+
 /**
  * Fetch NFT activity history for a given mint address.
  *
  * This function goes through a few steps:
  *
- * 1. Fetch transaction history for given address
+ * 1. Fetch transaction history for given mint address
  * 2. Find mint and transfer transactions, record token accounts using these
  * 3. Search transaction history of each token account
- * 4. Identify Magic Eden transactions using Magic Eden program ID
- * 5. Sort and return the results
+ * 4. Identify Magic Eden transactions using Magic Eden related addresses
+ * 5. Sort the results by blockTime and return them
  *
  * A few comments:
  *
- * - This function makes a lot of API calls and can easily get rate limited
- *   by RPC nodes.
+ * - This function makes a lot of RPC API calls and can easily get rate limited
+ *   by RPC nodes. It's also slow to query data in this way. A better solution
+ *   would probably be to maintain a separate indexed database of marketplace
+ *   transactions which is accessible through a its own API, similar to how
+ *   Magic Eden fetches NFT history (e.g.
+ *   https://api-mainnet.magiceden.io/rpc/getGlobalActivitiesByQuery?q=...).
+ *   This is of course not decentralized but it can help to mitigate the above
+ *   mentioned concerns.
+ *
  * - The logic is really guessing to identify Magic Eden transactions. Ideally,
- *   if one knew the structure of the Magic Eden programs one could identify
- *   and deserialize these transactions more reliably.
+ *   if one knew the structure of the Magic Eden programs and instructions
+ *   data model one could identify and decode these transactions more reliably.
  */
 export const fetchActivityHistory = async (address: string) => {
   // First get all the transactions for the given mint address
@@ -90,13 +98,12 @@ export const fetchActivityHistory = async (address: string) => {
     signatures.map((x) => x.signature),
   );
 
+  // Record of all identified transactions
   const activity: TransactionVariants[] = [];
 
   // Use a Set to avoid duplicate marking accounts (might not happen
   // but this will prevent it anyway).
   const tokenAccounts: Set<string> = new Set([]);
-
-  console.log(`Found ${txs.length} transactions for address: ${address}`);
 
   // Iterate through all the transactions and identify transfers and the
   // original mint transactions. Record associated accounts, which will be
@@ -160,28 +167,68 @@ export const fetchActivityHistory = async (address: string) => {
     }
   }
 
+  // For some transactions, it seems, the mint and some create associated
+  // token account transactions can only be found in the inner instructions
+  // data.
+  for (const tx of txs) {
+    const innerInstructions = tx?.meta?.innerInstructions;
+    if (innerInstructions) {
+      for (const innerInstruction of innerInstructions) {
+        for (const inx of innerInstruction.instructions) {
+          if ("parsed" in inx) {
+            const { type } = inx.parsed;
+
+            // Mint transaction
+            if (type === "mintTo") {
+              const minter = inx.parsed.info.mintAuthority;
+              const mintTransaction: MintTransaction = {
+                tx,
+                minter,
+                type: TransactionType.Mint,
+                signatures: tx.transaction.signatures,
+              };
+
+              // Record mint transaction
+              activity.push(mintTransaction);
+
+              // Capture mintTo target account
+              tokenAccounts.add(inx.parsed.info.account);
+            }
+
+            // Create associated token account transactions
+            if (type === "create") {
+              const mint = inx.parsed.info.mint;
+              if (mint === address) {
+                const account = inx.parsed.info.account;
+                tokenAccounts.add(account);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   const tokenAccountsList = Array.from(tokenAccounts);
 
   // For each identified token account for the given mint address, search
   // its transaction history and identify transactions related to Magic Eden
   // using Magic Eden program IDs. Record these transactions in the activity
   // history.
-  for (const account of tokenAccountsList) {
-    const pk = new PublicKey(account);
+  for (const tokenAccount of tokenAccountsList) {
+    const pk = new PublicKey(tokenAccount);
     const signatures = await connection.getSignaturesForAddress(pk);
     const txs = await connection.getParsedConfirmedTransactions(
       signatures.map((x) => x.signature),
     );
-
-    console.log(`Found ${txs.length} transactions for token account: ${pk}`);
 
     for (const tx of txs) {
       const innerInstructions = tx?.meta?.innerInstructions;
       if (innerInstructions) {
         for (const innerInstruction of innerInstructions) {
           if (innerInstruction) {
-            let isSaleTransaction = false;
             let buyer = "";
+            let isSaleTransaction = false;
             let lamportsTransferred = new BN(0);
 
             for (const inx of innerInstruction.instructions) {

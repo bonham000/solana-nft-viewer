@@ -85,7 +85,7 @@ function App() {
       <Body>
         <Form onSubmit={handleSubmit}>
           <SearchIcon />
-          <Input
+          <SearchInput
             autoFocus
             type="text"
             value={address}
@@ -163,7 +163,7 @@ const Form = styled.form`
   height: 128px;
 `;
 
-const Input = styled.input`
+const SearchInput = styled.input`
   width: 500px;
   height: 45px;
   border-radius: 48px;

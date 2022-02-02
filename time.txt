@@ -1,4 +1,4 @@
-Total Time = 15 hours
+Total Time = 18 hours
 
 Sunday January 30, 2020:
 4pm - 8pm (4 hours)
@@ -23,9 +23,16 @@ Monday, January 31, 2022:
 - Fetch SOL price for displaying USD prices
 
 Tuesday, February 1, 2022:
-12pm - 5pm (5 hours)
+12pm - 6pm (6 hours)
 - Implement Result type to handle API response states: loading, error, ok
 - Add more tests
 - Refactor and cleanup code, add comments
 - Polish up styles and layout, minor improvements for mobile layout
 - Check more addresses and debug a few issues fetching all Sale transactions
+
+Wednesday, February 2, 2022:
+10am - 12pm (2 hours)
+- Update README
+- Perform final round of QA and checking numerous Magic Eden collection items
+- Find and resolve a few issues deriving correct activity history
+- Remove temporary debugging code

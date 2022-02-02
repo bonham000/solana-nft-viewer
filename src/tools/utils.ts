@@ -3,13 +3,6 @@ import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import BN from "bignumber.js";
 
 /**
- * Wait some time.
- */
-export const wait = async (time = 250) => {
-  return new Promise((resolve) => setTimeout(resolve, time));
-};
-
-/**
  * Assert a condition cannot occur. Used for writing exhaustive switch
  * blocks guarantee every value is handled.
  */

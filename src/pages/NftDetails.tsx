@@ -60,20 +60,6 @@ const NftDetails: React.FC = () => {
     setTokenHistoryState(ResultLoading());
   }, [address]);
 
-  // Handle fetching NFT activity history
-  React.useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const result = await fetchActivityHistory(address);
-        setTokenHistoryState(Ok(result));
-      } catch (err) {
-        setTokenHistoryState(Err(err as Error));
-      }
-    };
-
-    fetchHistory();
-  }, [address]);
-
   // Handle fetching NFT metadata
   React.useEffect(() => {
     const fetchHistory = async () => {
@@ -82,6 +68,20 @@ const NftDetails: React.FC = () => {
         setNftMetadataState(Ok(result));
       } catch (err) {
         setNftMetadataState(Err(err as Error));
+      }
+    };
+
+    fetchHistory();
+  }, [address]);
+
+  // Handle fetching NFT activity history
+  React.useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const result = await fetchActivityHistory(address);
+        setTokenHistoryState(Ok(result));
+      } catch (err) {
+        setTokenHistoryState(Err(err as Error));
       }
     };
 
@@ -138,7 +138,7 @@ const NftDetails: React.FC = () => {
             <Tx key={tx.signatures[0]}>
               <TxLeft>
                 <TxHeading>{renderTransactionTitle(tx)}</TxHeading>
-                <RenderDateTime time={tx.tx.blockTime} />
+                <DateTimeComponent time={tx.tx.blockTime} />
               </TxLeft>
               <PriceDataComponent tx={tx} priceState={priceState} />
             </Tx>
@@ -207,7 +207,7 @@ const ImageShimmer = () => {
 };
 
 /**
- * Render ... with an interval animation to insinuate loading behavior.
+ * Render ... with an interval animation to suggest loading behavior.
  */
 const ThreeDotsAnimation: React.FC = () => {
   const [dots, setDots] = useState("");
@@ -290,7 +290,7 @@ const TxSubHeading = styled(TxText)`
 /**
  * Render date time for a given transaction blockTime.
  */
-const RenderDateTime = (props: { time: number | null | undefined }) => {
+const DateTimeComponent = (props: { time: number | null | undefined }) => {
   if (typeof props.time === "number") {
     return <TxSubHeading>{formatDate(props.time * 1000)}</TxSubHeading>;
   } else {
@@ -340,31 +340,31 @@ const renderTransactionTitle = (tx: TransactionVariants) => {
     case TransactionType.Mint:
       return (
         <span>
-          Minted by <RenderAddress address={tx.minter} />
+          Minted by <AddressComponent address={tx.minter} />
         </span>
       );
     case TransactionType.Transfer:
       return (
         <span>
-          Transferred to <RenderAddress address={tx.destination} />
+          Transferred to <AddressComponent address={tx.destination} />
         </span>
       );
     case TransactionType.Listing:
       return (
         <span>
-          Listed by <RenderAddress address={tx.seller} />
+          Listed by <AddressComponent address={tx.seller} />
         </span>
       );
     case TransactionType.CancelListing:
       return (
         <span>
-          Listing cancelled by <RenderAddress address={tx.seller} />
+          Listing cancelled by <AddressComponent address={tx.seller} />
         </span>
       );
     case TransactionType.Sale:
       return (
         <span>
-          Bought by <RenderAddress address={tx.buyer} />
+          Bought by <AddressComponent address={tx.buyer} />
         </span>
       );
     default:
@@ -376,7 +376,7 @@ const renderTransactionTitle = (tx: TransactionVariants) => {
  * Render an address. This handles abbreviating the address and wrapping
  * it in a click handler which copies the address to the clipboard.
  */
-const RenderAddress = (props: { address: string }) => {
+const AddressComponent = (props: { address: string }) => {
   const { address } = props;
   return (
     <ClickableAddress
