@@ -20,9 +20,13 @@ const connection = new Connection(clusterApiUrl("mainnet-beta"));
 const MAGIC_EDEN_LISTING_ACCOUNT =
   "GUfCR9mK6azb9vcpsxgXyj7XRPAKJd4KMHTTVvtncGgp";
 
-// It's not entirely clear what address this is, but it's another address
-// representative of Sale transactions.
-const MULTI_SIG_ADDRESS = "3D49QorJyNaL4rcpiynbuS3pRH4Y7EXEM6v6ZGaqfFGK";
+// It's not entirely clear what addresses these are, but they appear to also
+// be associated with Sale transactions. They could be more which needed to
+// be added to this list.
+const MULTI_SIG_ADDRESSES = new Set([
+  "4pUQS4Jo2dsfWzt3VgHXy3H6RYnEDd11oWPiaM2rdAPw",
+  "3D49QorJyNaL4rcpiynbuS3pRH4Y7EXEM6v6ZGaqfFGK",
+]);
 
 interface SolPriceResponse {
   solana: {
@@ -202,7 +206,7 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
                 // authority. These also represent sale transactions.
                 if (inx.parsed.type === "transfer") {
                   const multisig = inx.parsed.info.multisigAuthority;
-                  if (multisig === MULTI_SIG_ADDRESS) {
+                  if (MULTI_SIG_ADDRESSES.has(multisig)) {
                     // This is getting a bit hacky but in this variation of
                     // sale transactions there is a closeAccount instruction,
                     // a transfer instruction (this one), and other transfer
