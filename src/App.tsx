@@ -24,7 +24,7 @@ import { COLORS as C } from "./tools/colors";
  */
 
 function App() {
-  const searchInput = React.useRef(null);
+  const searchInput = React.useRef<HTMLInputElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const [address, setAddress] = React.useState("");
@@ -58,7 +58,6 @@ function App() {
     if (validateAddressAsPublicKey(address)) {
       // Blur input on submit
       if (searchInput.current) {
-        // @ts-ignore - blur method should exist
         searchInput.current.blur();
       }
 
@@ -66,6 +65,14 @@ function App() {
     } else {
       toast.error("Please check the address format.");
     }
+  };
+
+  // Clear address and re-focus search input
+  const clearInput = () => {
+    if (searchInput.current) {
+      searchInput.current.focus();
+    }
+    setAddress("");
   };
 
   return (
@@ -88,8 +95,8 @@ function App() {
             onChange={(e) => setAddress(e.target.value)}
           />
           <ClearIcon
-            hide={address === "" ? "true" : ""}
-            onClick={() => setAddress("")}
+            onClick={clearInput}
+            style={{ visibility: address === "" ? "hidden" : "visible" }}
           />
         </Form>
         <Routes>
@@ -181,10 +188,6 @@ const ClearIcon = styled(FaTimesCircle)`
   position: relative;
   left: -32px;
   color: ${C.gray};
-
-  visibility: ${(props: { hide: string }) => {
-    return props.hide === "true" ? "hidden" : "visible";
-  }};
 
   :hover {
     cursor: pointer;

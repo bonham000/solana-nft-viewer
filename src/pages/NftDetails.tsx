@@ -150,7 +150,11 @@ const NftDetails: React.FC = () => {
             <ThreeDotsAnimation />
           </LoadingText>
         ),
-        err: () => <ErrorText>Failed to load NFT activity history.</ErrorText>,
+        err: () => (
+          <ErrorText style={{ marginTop: 42 }}>
+            Failed to load NFT activity history.
+          </ErrorText>
+        ),
       })}
     </TxContainer>
   );
@@ -319,12 +323,7 @@ const PriceDataComponent = (props: {
         ok: (solPrice) => (
           <TxSubHeading>{formatFiatPrice(sol, solPrice)}</TxSubHeading>
         ),
-        loading: () => (
-          <TxSubHeading>
-            Loading SOL price
-            <ThreeDotsAnimation />
-          </TxSubHeading>
-        ),
+        loading: () => <TxSubHeading>Loading SOL price...</TxSubHeading>,
         err: () => <TxSubHeading>Failed to load SOL price.</TxSubHeading>,
       })}
     </TxRight>
