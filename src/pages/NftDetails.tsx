@@ -319,7 +319,12 @@ const PriceDataComponent = (props: {
         ok: (solPrice) => (
           <TxSubHeading>{formatFiatPrice(sol, solPrice)}</TxSubHeading>
         ),
-        loading: () => <TxSubHeading>Loading SOL price...</TxSubHeading>,
+        loading: () => (
+          <TxSubHeading>
+            Loading SOL price
+            <ThreeDotsAnimation />
+          </TxSubHeading>
+        ),
         err: () => <TxSubHeading>Failed to load SOL price.</TxSubHeading>,
       })}
     </TxRight>
