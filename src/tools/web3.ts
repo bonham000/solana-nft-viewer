@@ -20,6 +20,10 @@ const connection = new Connection(clusterApiUrl("mainnet-beta"));
 const MAGIC_EDEN_LISTING_ACCOUNT =
   "GUfCR9mK6azb9vcpsxgXyj7XRPAKJd4KMHTTVvtncGgp";
 
+// It's not entirely clear what address this is, but it's another address
+// representative of Sale transactions.
+const MULTI_SIG_ADDRESS = "3D49QorJyNaL4rcpiynbuS3pRH4Y7EXEM6v6ZGaqfFGK";
+
 interface SolPriceResponse {
   solana: {
     usd: number;
@@ -55,7 +59,7 @@ export const fetchTokenMetadata = async (
 };
 
 /**
- * Fetch NFT activity history.
+ * Fetch NFT activity history for a given mint address.
  *
  * This function goes through a few steps:
  *
@@ -65,7 +69,7 @@ export const fetchTokenMetadata = async (
  * 4. Identify Magic Eden transactions using Magic Eden program ID
  * 5. Sort and return the results
  *
- * A few points to comment on:
+ * A few comments:
  *
  * - This function makes a lot of API calls and can easily get rate limited
  *   by RPC nodes.
@@ -82,9 +86,13 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
   );
 
   const activity: TransactionVariants[] = [];
-  const tokenAccounts: Set<string> = new Set();
+
+  // Use a Set to avoid duplicate marking accounts (might not happen
+  // but this will prevent it anyway).
+  const tokenAccounts: Set<string> = new Set([]);
 
   console.log(`Found ${txs.length} transactions for address: ${address}`);
+  console.log(txs);
 
   // Iterate through all the transactions and identify transfers and the
   // original mint transactions. Record associated accounts, which will be
@@ -105,8 +113,21 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
               type: TransactionType.Mint,
               signatures: tx.transaction.signatures,
             };
+
+            // Record mint transaction
             activity.push(mintTransaction);
+
+            // Capture mintTo target account
             tokenAccounts.add(inx.parsed.info.account);
+          }
+
+          // Create associated token account transactions
+          if (type === "create") {
+            const mint = inx.parsed.info.mint;
+            if (mint === address) {
+              const account = inx.parsed.info.account;
+              tokenAccounts.add(account);
+            }
           }
 
           // Transfer transactions
@@ -123,7 +144,10 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
                 signatures: tx.transaction.signatures,
               };
 
+              // Record transfer transaction
               activity.push(transferTransaction);
+
+              // Capture destination token account
               tokenAccounts.add(destination);
             }
           }
@@ -158,9 +182,38 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
 
             for (const inx of innerInstruction.instructions) {
               if ("parsed" in inx) {
+                // Record/increment transferred lamports. This is used to
+                // determine the buy price for Sale transactions, in which
+                // the total price represents all the transferred lamports.
+                // There are multiple separate transfers because of artist
+                // royalties.
                 if (inx.parsed.type === "transfer") {
                   const amount = inx.parsed.info.lamports;
-                  lamportsTransferred = lamportsTransferred.plus(amount);
+                  if (typeof amount === "number") {
+                    lamportsTransferred = lamportsTransferred.plus(amount);
+
+                    // Preemptively assign buyer in the event this is a special
+                    // type of Sale transaction (matched below with multisig
+                    // address).
+                    buyer = inx.parsed.info.source;
+                  }
+                }
+
+                // Identify transfers which involve this special multisig
+                // authority. These also represent sale transactions.
+                if (inx.parsed.type === "transfer") {
+                  const multisig = inx.parsed.info.multisigAuthority;
+                  if (multisig === MULTI_SIG_ADDRESS) {
+                    // This is getting a bit hacky but in this variation of
+                    // sale transactions there is a closeAccount instruction,
+                    // a transfer instruction (this one), and other transfer
+                    // instructions which transfer SOL. That is in contrast
+                    // to the same type of instruction for closing a listing,
+                    // which doesn't include the SOL transfers.
+                    if (innerInstruction.instructions.length > 2) {
+                      isSaleTransaction = true;
+                    }
+                  }
                 }
 
                 if (inx.parsed.type === "setAuthority") {
@@ -179,6 +232,8 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
                       seller: authority,
                       signatures: tx.transaction.signatures,
                     };
+
+                    // Record listing transaction
                     activity.push(listingTransaction);
                   } else if (authority === MAGIC_EDEN_LISTING_ACCOUNT) {
                     // If the current authority is the Magic Eden listing
@@ -192,6 +247,8 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
                           seller: newAuthority,
                           signatures: tx.transaction.signatures,
                         };
+
+                      // Record cancel listing transaction
                       activity.push(cancelListingTransaction);
                     } else {
                       // Otherwise it is a sale
@@ -213,6 +270,8 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
                 buyer,
                 signatures: tx.transaction.signatures,
               };
+
+              // Record sale transaction
               activity.push(saleTransaction);
             }
           }

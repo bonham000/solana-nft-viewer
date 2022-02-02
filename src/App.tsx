@@ -39,7 +39,7 @@ function App() {
         setAddress(urlAddress);
       } else {
         // Otherwise redirect to / and notify the user with a toast
-        toast.error("Invalid address provided in url");
+        toast.error("Invalid address provided in url.");
         navigate("/");
       }
     }
@@ -87,7 +87,10 @@ function App() {
             placeholder="Input an NFT's mint account"
             onChange={(e) => setAddress(e.target.value)}
           />
-          <ClearIcon hide={address === ""} onClick={() => setAddress("")} />
+          <ClearIcon
+            hide={address === "" ? "true" : ""}
+            onClick={() => setAddress("")}
+          />
         </Form>
         <Routes>
           <Route path="/" element={null} />
@@ -179,8 +182,8 @@ const ClearIcon = styled(FaTimesCircle)`
   left: -32px;
   color: ${C.gray};
 
-  visibility: ${(props: { hide: boolean }) => {
-    return props.hide ? "hidden" : "visible";
+  visibility: ${(props: { hide: string }) => {
+    return props.hide === "true" ? "hidden" : "visible";
   }};
 
   :hover {
