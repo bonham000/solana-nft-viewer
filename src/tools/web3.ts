@@ -92,7 +92,6 @@ export const fetchMagicEdenActivityHistory = async (address: string) => {
   const tokenAccounts: Set<string> = new Set([]);
 
   console.log(`Found ${txs.length} transactions for address: ${address}`);
-  console.log(txs);
 
   // Iterate through all the transactions and identify transfers and the
   // original mint transactions. Record associated accounts, which will be
