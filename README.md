@@ -1,8 +1,10 @@
 # Nifty Information
 
-View details about a Solana NFT given its mint address.
+View metadata and transaction history about a Solana NFT given its mint address.
 
 ## Project Structure
+
+The repo is organized as a fairly typical React project.
 
     .
     ├── ...                   # Other project config files/folders
