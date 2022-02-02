@@ -228,6 +228,7 @@ const NftName = styled.h5`
 `;
 
 const EmptyHistoryText = styled.p`
+  margin-top: 42px;
   font-size: 14px;
   color: ${C.grayLight};
 `;
