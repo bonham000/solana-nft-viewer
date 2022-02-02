@@ -42,8 +42,9 @@ export const fetchSolPrice = async () => {
     "https://api.coingecko.com/api/v3/simple/price?ids=SOLANA&vs_currencies=USD";
 
   const response = await fetch(url);
-  const price: SolPriceResponse = await response.json();
-  return new BN(price.solana.usd);
+  const data: SolPriceResponse = await response.json();
+  const solPrice = new BN(data.solana.usd);
+  return solPrice;
 };
 
 /**
@@ -81,7 +82,7 @@ export const fetchTokenMetadata = async (
  *   if one knew the structure of the Magic Eden programs one could identify
  *   and deserialize these transactions more reliably.
  */
-export const fetchMagicEdenActivityHistory = async (address: string) => {
+export const fetchActivityHistory = async (address: string) => {
   // First get all the transactions for the given mint address
   const pk = new PublicKey(address);
   const signatures = await connection.getSignaturesForAddress(pk);

@@ -10,7 +10,7 @@ import {
 import {
   fetchSolPrice,
   fetchTokenMetadata,
-  fetchMagicEdenActivityHistory,
+  fetchActivityHistory,
 } from "../tools/web3";
 import {
   formatDate,
@@ -64,7 +64,7 @@ const NftDetails: React.FC = () => {
   React.useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const result = await fetchMagicEdenActivityHistory(address);
+        const result = await fetchActivityHistory(address);
         setTokenHistoryState(Ok(result));
       } catch (err) {
         setTokenHistoryState(Err(err as Error));
@@ -88,7 +88,8 @@ const NftDetails: React.FC = () => {
     fetchHistory();
   }, [address]);
 
-  // Handling fetching current SOL USD price. Refresh every 10 seconds.
+  // Handling fetching current SOL USD price. Refreshes arbitrarily
+  // every 10 seconds.
   useInterval(() => {
     const fetchPriceData = async () => {
       try {
@@ -100,7 +101,7 @@ const NftDetails: React.FC = () => {
     };
 
     fetchPriceData();
-  }, 10000);
+  }, 10_000);
 
   return (
     <TxContainer>
@@ -119,14 +120,21 @@ const NftDetails: React.FC = () => {
         ),
         err: () => (
           <ImageContainer>
-            <ErrorText>Failed to load NFT Metadata</ErrorText>
+            <ErrorText>Failed to load NFT Metadata.</ErrorText>
+            <ErrorText>
+              Are you sure this is a Solana NFT mint address?
+            </ErrorText>
           </ImageContainer>
         ),
       })}
       <TxTitle>ACTIVITY</TxTitle>
       {matchResult(tokenHistoryState, {
-        ok: (history) =>
-          history.map((tx) => (
+        ok: (history) => {
+          if (history.length === 0) {
+            return <EmptyHistoryText>No history found.</EmptyHistoryText>;
+          }
+
+          return history.map((tx) => (
             <Tx key={tx.signatures[0]}>
               <TxLeft>
                 <TxHeading>{renderTransactionTitle(tx)}</TxHeading>
@@ -134,9 +142,15 @@ const NftDetails: React.FC = () => {
               </TxLeft>
               <PriceDataComponent tx={tx} priceState={priceState} />
             </Tx>
-          )),
-        loading: () => <LoadingText>Loading activity history...</LoadingText>,
-        err: () => <ErrorText>Failed to load NFT activity history</ErrorText>,
+          ));
+        },
+        loading: () => (
+          <LoadingText>
+            Loading activity history
+            <ThreeDotsAnimation />
+          </LoadingText>
+        ),
+        err: () => <ErrorText>Failed to load NFT activity history.</ErrorText>,
       })}
     </TxContainer>
   );
@@ -188,6 +202,20 @@ const ImageShimmer = () => {
   );
 };
 
+/**
+ * Render ... with an interval animation to insinuate loading behavior.
+ */
+const ThreeDotsAnimation: React.FC = () => {
+  const [dots, setDots] = useState("");
+
+  useInterval(() => {
+    const next = dots.length === 3 ? "" : dots.concat(".");
+    setDots(next);
+  }, 333);
+
+  return <span>{dots}</span>;
+};
+
 const NftName = styled.h5`
   font-size: 26px;
   margin-top: 26px;
@@ -195,7 +223,13 @@ const NftName = styled.h5`
   font-weight: 500;
 `;
 
+const EmptyHistoryText = styled.p`
+  font-size: 14px;
+  color: ${C.grayLight};
+`;
+
 const LoadingText = styled.p`
+  margin-top: 42px;
   font-size: 14px;
   color: ${C.grayLight};
 `;
@@ -274,6 +308,7 @@ const PriceDataComponent = (props: {
     return <TxRight />;
   }
 
+  // Calculate SOL from lamports
   const lamports = tx.lamports;
   const sol = lamportsToSOL(lamports);
 
@@ -285,7 +320,7 @@ const PriceDataComponent = (props: {
           <TxSubHeading>{formatFiatPrice(sol, solPrice)}</TxSubHeading>
         ),
         loading: () => <TxSubHeading>Loading SOL price...</TxSubHeading>,
-        err: () => <TxSubHeading>Failed to load SOL price</TxSubHeading>,
+        err: () => <TxSubHeading>Failed to load SOL price.</TxSubHeading>,
       })}
     </TxRight>
   );
