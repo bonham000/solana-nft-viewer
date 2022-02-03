@@ -1,12 +1,12 @@
 # Nifty Information
 
-View metadata and Magic Eden transaction history about a Solana NFT given its mint address.
+View Solana NFTs and Magic Eden transaction history given an NFT mint address.
 
 <img width="1440" alt="kitten-coup" src="https://user-images.githubusercontent.com/18126719/152432583-c494969c-9a6c-419a-b60a-3db72f8b7a85.png">
 
 ## Project Structure
 
-The repo is organized as a fairly typical React project.
+The repo is organized as a fairly standard React project.
 
     .
     ├── ...                   # Other project config files/folders
