@@ -283,6 +283,11 @@ const TxHeading = styled(TxText)`
   margin-top: 6px;
   margin-bottom: 6px;
   font-size: 16px;
+  font-weight: 400;
+`;
+
+const TxHeadingPrice = styled(TxHeading)`
+  font-size: 20px;
   font-weight: 500;
 `;
 
@@ -325,7 +330,7 @@ const PriceDataComponent = (props: {
 
   return (
     <TxRight>
-      <TxHeading>{formatNumber(sol)} ◎</TxHeading>
+      <TxHeadingPrice>{formatNumber(sol)} ◎</TxHeadingPrice>
       {matchResult(priceState, {
         ok: (solPrice) => (
           <TxSubHeading>{formatFiatPrice(sol, solPrice)}</TxSubHeading>
