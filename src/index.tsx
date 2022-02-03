@@ -4,7 +4,6 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-import { BrowserRouter as Router } from "react-router-dom";
 
 /**
  * Render the app in an error boundary.
@@ -42,9 +41,7 @@ const ErrorFallback = styled.div`
 ReactDOM.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <Router>
-        <App />
-      </Router>
+      <App />
     </ErrorBoundary>
   </React.StrictMode>,
   document.getElementById("root"),

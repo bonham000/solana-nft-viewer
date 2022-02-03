@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import {
+  BrowserRouter as Router,
   useNavigate,
   useLocation,
   Routes,
@@ -201,4 +202,11 @@ const ClearIcon = styled(FaTimesCircle)`
  * ============================================================================
  */
 
-export default App;
+// Wrap app in router
+const AppWithRouter = () => (
+  <Router>
+    <App />
+  </Router>
+);
+
+export default AppWithRouter;
