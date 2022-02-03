@@ -120,7 +120,14 @@ export const fetchActivityHistory = async (address: string) => {
 
           // Mint transaction
           if (type === "mintTo") {
-            const minter = inx.parsed.info.mintAuthority;
+            let minter = inx.parsed.info.mintAuthority;
+            let multisigMinter = inx.parsed.info.multisigMintAuthority;
+
+            // If there is no regular authority it probably a multisig address:
+            if (!minter && multisigMinter) {
+              minter = multisigMinter;
+            }
+
             const mintTransaction: MintTransaction = {
               tx,
               minter,
@@ -149,6 +156,7 @@ export const fetchActivityHistory = async (address: string) => {
             const mint = inx.parsed.info.mint;
             if (mint === address) {
               const source: string = inx.parsed.info.source;
+              const destination: string = inx.parsed.info.destination;
               const destinationAccount: string = inx.parsed.info.destination;
 
               // Find the owner of the destination token account. This
@@ -156,6 +164,9 @@ export const fetchActivityHistory = async (address: string) => {
               // create transaction or try to look up the account info.
               let newOwnerAddress = null;
 
+              // NOTE: Some transfers will not include this create instruction.
+              // In those cases, I'm not sure how to find the transfer to
+              // wallet owner address.
               const createTx = instructions.find((x) => {
                 return "parsed" in x && x.parsed.type === "create";
               });
@@ -171,6 +182,7 @@ export const fetchActivityHistory = async (address: string) => {
                 source,
                 newOwnerAddress,
                 type: TransactionType.Transfer,
+                destinationTokenAccount: destination,
                 signatures: tx.transaction.signatures,
               };
 
@@ -246,7 +258,7 @@ export const fetchActivityHistory = async (address: string) => {
     for (const tx of txs) {
       const signature = tx?.transaction.signatures.join("");
 
-      // Avoid evaluating thte same transaction twice
+      // Avoid evaluating the same transaction twice
       if (checkedTransactions.has(signature)) {
         continue;
       }

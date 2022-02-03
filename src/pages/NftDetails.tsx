@@ -344,16 +344,11 @@ const renderTransactionTitle = (tx: TransactionVariants) => {
         </span>
       );
     case TransactionType.Transfer:
-      // If this happens handle it rather than throwing an error
-      if (tx.newOwnerAddress === null) {
-        return <span>Transferred to ...?</span>;
-      } else {
-        return (
-          <span>
-            Transferred to <AddressComponent address={tx.newOwnerAddress} />
-          </span>
-        );
-      }
+      return (
+        <span>
+          Transferred to <AddressComponent address={tx.newOwnerAddress} />
+        </span>
+      );
     case TransactionType.Listing:
       return (
         <span>
@@ -383,6 +378,14 @@ const renderTransactionTitle = (tx: TransactionVariants) => {
  */
 const AddressComponent = (props: { address: string }) => {
   const { address } = props;
+
+  // Sometimes addresses will fail to be derived, esp. for some
+  // transferChecked transactions. Handle that here because otherwise the
+  // following code would throw an error.
+  if (!address) {
+    return <span>[no address found...]</span>;
+  }
+
   return (
     <ClickableAddress
       onClick={() => {
