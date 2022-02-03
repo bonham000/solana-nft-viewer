@@ -24,10 +24,10 @@ import { COLORS as C } from "./tools/colors";
  */
 
 function App() {
-  const searchInput = React.useRef<HTMLInputElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const [address, setAddress] = React.useState("");
+  const searchInput = React.useRef<HTMLInputElement>(null);
 
   // Reset entered address on navigation back to base route
   React.useEffect(() => {
@@ -68,10 +68,11 @@ function App() {
   };
 
   // Clear address and re-focus search input
-  const clearInput = () => {
+  const clearSearchInput = () => {
     if (searchInput.current) {
       searchInput.current.focus();
     }
+
     setAddress("");
   };
 
@@ -95,7 +96,7 @@ function App() {
             onChange={(e) => setAddress(e.target.value)}
           />
           <ClearIcon
-            onClick={clearInput}
+            onClick={clearSearchInput}
             style={{ visibility: address === "" ? "hidden" : "visible" }}
           />
         </Form>

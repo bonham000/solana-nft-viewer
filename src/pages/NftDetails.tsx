@@ -89,7 +89,7 @@ const NftDetails: React.FC = () => {
     fetchHistory();
   }, [address]);
 
-  // Handling fetching current SOL USD price. Refreshes arbitrarily
+  // Handle fetching current SOL USD price. Refreshes arbitrarily
   // every 10 seconds.
   useInterval(() => {
     const fetchPriceData = async () => {
@@ -136,7 +136,7 @@ const NftDetails: React.FC = () => {
           }
 
           return history.map((tx) => (
-            <Tx key={tx.signatures[0]}>
+            <Tx key={tx.signatures.join("")}>
               <TxLeft>
                 <TxHeading>{renderTransactionTitle(tx)}</TxHeading>
                 <DateTimeComponent time={tx.tx.blockTime} />

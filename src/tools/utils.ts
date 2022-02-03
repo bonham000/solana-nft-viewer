@@ -8,12 +8,14 @@ import BN from "bignumber.js";
  */
 export const assertUnreachable = (x: never): never => {
   throw new Error(
-    `Panic! Received a value which should not exist: ${JSON.stringify(x)}`,
+    `assertUnreachable received a value which should not exist: ${JSON.stringify(
+      x,
+    )}`,
   );
 };
 
 /**
- * Format a date.
+ * Format a date, e.g. 1640925203000 -> Dec 30, 2021 at 10:33pm
  */
 export const formatDate = (date: number) => {
   const day = format(new Date(date), "MMM dd, yyyy");
@@ -25,7 +27,7 @@ export const formatDate = (date: number) => {
 };
 
 /**
- * Format a fiat price.
+ * Format a fiat price: e.g. $227.27 USD
  */
 export const formatFiatPrice = (sol: BN, price: BN) => {
   const usd = sol.times(price);
@@ -66,7 +68,8 @@ export const validateAddressAsPublicKey = (address: string) => {
 };
 
 /**
- * Abbreviate a public key address for display purposes.
+ * Abbreviate a public key address for display purposes, e.g.
+ * 7L15qmrXLQaSqPqq3e68cUNyqiyuvXEoRdmYmZpt3zcw -> 7L15...3zcw
  */
 export const abbreviateAddress = (address: string) => {
   return `${address.slice(0, 4)}...${address.slice(address.length - 4)}`;
