@@ -45,7 +45,8 @@ export const fetchSolPrice = async () => {
 export const fetchNftMetadata = async (
   address: string,
 ): Promise<NftMetadata> => {
-  const pda = await programs.metadata.Metadata.getPDA(new PublicKey(address));
+  const pk = new PublicKey(address);
+  const pda = await programs.metadata.Metadata.getPDA(pk);
   const result = await programs.metadata.Metadata.load(connection, pda);
   const metadataUri = result.data.data.uri;
   const response = await fetch(metadataUri);

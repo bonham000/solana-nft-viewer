@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Shimmer } from "react-shimmer";
 import {
   NftMetadata,
@@ -41,9 +41,10 @@ type NftMetadataState = Result<NftMetadata, Error>;
 type TokenHistoryState = Result<TransactionVariant[], Error>;
 
 const NftDetails: React.FC = () => {
-  // Derive current address from URL location state
-  const location = useLocation();
-  const address = location.pathname.replace("/txs/", "");
+  // Derive current address from URL params
+  const params = useParams();
+  // Address should exist since router matched and render this page
+  const address = params.address as string;
 
   // Setup state
   const [priceState, setPriceState] = useState<PriceState>(ResultLoading());

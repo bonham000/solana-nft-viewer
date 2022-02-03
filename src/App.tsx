@@ -32,8 +32,8 @@ function App() {
   // Reset entered address on navigation back to base route
   React.useEffect(() => {
     const { pathname } = location;
-    if (pathname.includes("/txs/")) {
-      const urlAddress = pathname.replace("/txs/", "");
+    if (pathname.includes("/nft/")) {
+      const urlAddress = pathname.replace("/nft/", "");
       if (validateAddressAsPublicKey(urlAddress)) {
         // If the address is valid select it
         setAddress(urlAddress);
@@ -61,7 +61,7 @@ function App() {
         searchInput.current.blur();
       }
 
-      navigate(`/txs/${address}`);
+      navigate(`/nft/${address}`);
     } else {
       toast.error("Please check the address format.");
     }
@@ -101,7 +101,7 @@ function App() {
         </Form>
         <Routes>
           <Route path="/" element={null} />
-          <Route path="/txs/:address" element={<NftDetails />} />
+          <Route path="/nft/:address" element={<NftDetails />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Body>
