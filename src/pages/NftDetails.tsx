@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { useLocation } from "react-router-dom";
 import { Shimmer } from "react-shimmer";
@@ -55,13 +55,13 @@ const NftDetails: React.FC = () => {
   );
 
   // Reset state when the address changes
-  React.useEffect(() => {
+  useEffect(() => {
     setNftMetadataState(ResultLoading());
     setTokenHistoryState(ResultLoading());
   }, [address]);
 
   // Handle fetching NFT metadata
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchHistory = async () => {
       try {
         const result = await fetchNftMetadata(address);
@@ -75,7 +75,7 @@ const NftDetails: React.FC = () => {
   }, [address]);
 
   // Handle fetching NFT activity history
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchHistory = async () => {
       try {
         const result = await fetchActivityHistoryForMintAddress(address);
@@ -384,7 +384,7 @@ const renderTransactionTitle = (tx: TransactionVariant) => {
 const AddressComponent = (props: { address: string }) => {
   const { address } = props;
 
-  // Sometimes addresses will fail to be derived, esp. for some
+  // Sometimes addresses will fail to be derived, especially for some
   // transferChecked transactions. Handle that here because otherwise the
   // following code would throw an error.
   if (!address) {
