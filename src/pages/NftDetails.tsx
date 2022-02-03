@@ -5,12 +5,12 @@ import { Shimmer } from "react-shimmer";
 import {
   NftMetadata,
   TransactionType,
-  TransactionVariants,
+  TransactionVariant,
 } from "../tools/types";
 import {
   fetchSolPrice,
-  fetchTokenMetadata,
-  fetchActivityHistory,
+  fetchNftMetadata,
+  fetchActivityHistoryForMintAddress,
 } from "../tools/web3";
 import {
   formatDate,
@@ -38,7 +38,7 @@ import { ResultLoading, Result, Ok, Err, matchResult } from "../tools/result";
 
 type PriceState = Result<BN, Error>;
 type NftMetadataState = Result<NftMetadata, Error>;
-type TokenHistoryState = Result<TransactionVariants[], Error>;
+type TokenHistoryState = Result<TransactionVariant[], Error>;
 
 const NftDetails: React.FC = () => {
   // Derive current address from URL location state
@@ -64,7 +64,7 @@ const NftDetails: React.FC = () => {
   React.useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const result = await fetchTokenMetadata(address);
+        const result = await fetchNftMetadata(address);
         setNftMetadataState(Ok(result));
       } catch (err) {
         setNftMetadataState(Err(err as Error));
@@ -78,7 +78,7 @@ const NftDetails: React.FC = () => {
   React.useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const result = await fetchActivityHistory(address);
+        const result = await fetchActivityHistoryForMintAddress(address);
         setTokenHistoryState(Ok(result));
       } catch (err) {
         setTokenHistoryState(Err(err as Error));
@@ -150,11 +150,16 @@ const NftDetails: React.FC = () => {
             <ThreeDotsAnimation />
           </LoadingText>
         ),
-        err: () => (
-          <ErrorText style={{ marginTop: 42 }}>
-            Failed to load NFT activity history.
-          </ErrorText>
-        ),
+        err: (e) => {
+          // Heuristic to determine if requests were rate limited
+          const isRateLimited = e.message.includes("429 Too Many Requests");
+          return (
+            <ErrorText style={{ marginTop: 42 }}>
+              Failed to load NFT activity history.{" "}
+              {isRateLimited && "The requests were rate limited."}
+            </ErrorText>
+          );
+        },
       })}
     </TxContainer>
   );
@@ -302,7 +307,7 @@ const DateTimeComponent = (props: { time: number | null | undefined }) => {
  * Handle rendering price data for an NFT activity record.
  */
 const PriceDataComponent = (props: {
-  tx: TransactionVariants;
+  tx: TransactionVariant;
   priceState: PriceState;
 }) => {
   const { tx, priceState } = props;
@@ -334,7 +339,7 @@ const PriceDataComponent = (props: {
 /**
  * Handle rendering the transaction summary title for a given transaction.
  */
-const renderTransactionTitle = (tx: TransactionVariants) => {
+const renderTransactionTitle = (tx: TransactionVariant) => {
   const { type } = tx;
   switch (type) {
     case TransactionType.Mint:

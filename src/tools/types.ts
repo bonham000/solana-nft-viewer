@@ -80,9 +80,11 @@ export interface SaleTransaction extends TransactionBase {
  * transactions are possible but these represent the specific variants which
  * are recognized and displayed here.
  */
-export type TransactionVariants =
+export type TransactionVariant =
   | MintTransaction
   | TransferTransaction
   | ListingTransaction
   | CancelListingTransaction
   | SaleTransaction;
+
+export type NftHistory = TransactionVariant[];

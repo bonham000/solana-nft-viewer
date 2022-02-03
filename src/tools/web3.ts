@@ -4,14 +4,18 @@ import {
   CancelListingTransaction,
   ListingTransaction,
   MintTransaction,
+  NftHistory,
   NftMetadata,
   SaleTransaction,
   TransactionType,
-  TransactionVariants,
+  TransactionVariant,
   TransferTransaction,
 } from "./types";
 import BN from "bignumber.js";
 
+/**
+ * Establish Solana connection.
+ */
 const connection = new Connection(clusterApiUrl("mainnet-beta"));
 
 interface SolPriceResponse {
@@ -38,7 +42,7 @@ export const fetchSolPrice = async () => {
  * the Metaplex SDK and then fetches the full metadata record stored on
  * Arweave.
  */
-export const fetchTokenMetadata = async (
+export const fetchNftMetadata = async (
   address: string,
 ): Promise<NftMetadata> => {
   const pda = await programs.metadata.Metadata.getPDA(new PublicKey(address));
@@ -64,7 +68,7 @@ const MULTI_SIG_ADDRESSES = new Set([
   "F4ghBzHFNgJxV4wEQDchU5i7n4XWWMBSaq7CuswGiVsr",
 ]);
 
-// This appears to be a new address involved in Sale transactions
+// This appears to be a new address involved in Sale transactions.
 const DELEGATE_ADDRESS = "1BWutmTvYPwDtmw9abTkS4Ssr8no61spGAvW1X6NDix";
 
 /**
@@ -73,14 +77,14 @@ const DELEGATE_ADDRESS = "1BWutmTvYPwDtmw9abTkS4Ssr8no61spGAvW1X6NDix";
  * This function goes through a few steps:
  *
  * 1. Fetch transaction history for given mint address
- * 2. Find mint and transfer transactions, record token accounts using these
- * 3. Search transaction history of each token account
- * 4. Identify Magic Eden transactions using Magic Eden related addresses
+ * 2. Find mint and transfer transactions and record associated token accounts
+ * 3. Fetch and search transaction history of each associated token account
+ * 4. Identify Magic Eden transactions in token account history
  * 5. Sort the results by blockTime and return them
  *
  * A few comments:
  *
- * - This function makes a lot of RPC API calls and can easily get rate limited
+ * - This function makes a lot of RPC API calls and can get rate limited
  *   by RPC nodes. It's also slow to query data in this way. A better solution
  *   would probably be to maintain a separate indexed database of marketplace
  *   transactions which is accessible through a its own API, similar to how
@@ -93,7 +97,31 @@ const DELEGATE_ADDRESS = "1BWutmTvYPwDtmw9abTkS4Ssr8no61spGAvW1X6NDix";
  *   if one knew the structure of the Magic Eden programs and instructions
  *   data model one could identify and decode these transactions more reliably.
  */
-export const fetchActivityHistory = async (address: string) => {
+export const fetchActivityHistoryForMintAddress = async (
+  address: string,
+): Promise<NftHistory> => {
+  // First process the transaction history for the mint address
+  const result = await scanMintAddressHistory(address);
+  const { mintAddressHistory, tokenAccounts } = result;
+
+  // Next process the history for associated token accounts
+  const tokenAccountsHistory = await scanTokenAccountList(tokenAccounts);
+
+  // Combine both of the above for the full activity history
+  const txHistory = mintAddressHistory.concat(tokenAccountsHistory);
+
+  // Sort the history by blockTime
+  const history = txHistory.sort(sortByBlockTime);
+
+  return history;
+};
+
+/**
+ * Fetch transaction history for the NFT mint address. This identifies
+ * mint and transfer transactions and also associated token accounts for
+ * the NFT mint.
+ */
+const scanMintAddressHistory = async (address: string) => {
   // First get all the transactions for the given mint address
   const pk = new PublicKey(address);
   const signatures = await connection.getSignaturesForAddress(pk);
@@ -102,7 +130,7 @@ export const fetchActivityHistory = async (address: string) => {
   );
 
   // Record of all identified transactions
-  const activity: TransactionVariants[] = [];
+  const mintAddressHistory: NftHistory = [];
 
   // Use a Set to avoid duplicate marking accounts (might not happen
   // but this will prevent it anyway).
@@ -136,7 +164,7 @@ export const fetchActivityHistory = async (address: string) => {
             };
 
             // Record mint transaction
-            activity.push(mintTransaction);
+            mintAddressHistory.push(mintTransaction);
 
             // Capture mintTo target account
             tokenAccounts.add(inx.parsed.info.account);
@@ -165,8 +193,8 @@ export const fetchActivityHistory = async (address: string) => {
               let newOwnerAddress = null;
 
               // NOTE: Some transfers will not include this create instruction.
-              // In those cases, I'm not sure how to find the transfer to
-              // wallet owner address.
+              // In those cases, It's unclear how to find the new owner's
+              // address for these.
               const createTx = instructions.find((x) => {
                 return "parsed" in x && x.parsed.type === "create";
               });
@@ -187,7 +215,7 @@ export const fetchActivityHistory = async (address: string) => {
               };
 
               // Record transfer transaction
-              activity.push(transferTransaction);
+              mintAddressHistory.push(transferTransaction);
 
               // Capture destination token account
               tokenAccounts.add(destinationAccount);
@@ -220,7 +248,7 @@ export const fetchActivityHistory = async (address: string) => {
               };
 
               // Record mint transaction
-              activity.push(mintTransaction);
+              mintAddressHistory.push(mintTransaction);
 
               // Capture mintTo target account
               tokenAccounts.add(inx.parsed.info.account);
@@ -240,8 +268,24 @@ export const fetchActivityHistory = async (address: string) => {
     }
   }
 
-  const tokenAccountsList = Array.from(tokenAccounts);
+  return {
+    tokenAccounts,
+    mintAddressHistory,
+  };
+};
 
+/**
+ * Fetch and process transaction history for associated token accounts to
+ * identify marketplace related transactions (e.g. listing, listing
+ * cancelled, purchase).
+ */
+const scanTokenAccountList = async (
+  tokenAccounts: Set<string>,
+): Promise<NftHistory> => {
+  // Record of all identified transactions
+  const txHistory: NftHistory = [];
+
+  const tokenAccountsList = Array.from(tokenAccounts);
   const checkedTransactions = new Set();
 
   // For each identified token account for the given mint address, search
@@ -319,26 +363,26 @@ export const fetchActivityHistory = async (address: string) => {
                   if (delegate === DELEGATE_ADDRESS) {
                     const listingTransaction: ListingTransaction = {
                       tx,
-                      type: TransactionType.Listing,
                       seller: inx.parsed.info.owner,
+                      type: TransactionType.Listing,
                       signatures: tx.transaction.signatures,
                     };
 
                     // Record cancel listing transaction
-                    activity.push(listingTransaction);
+                    txHistory.push(listingTransaction);
                   }
                 }
 
                 if (inx.parsed.type === "revoke") {
                   const cancelListingTransaction: CancelListingTransaction = {
                     tx,
-                    type: TransactionType.CancelListing,
                     seller: inx.parsed.info.owner,
+                    type: TransactionType.CancelListing,
                     signatures: tx.transaction.signatures,
                   };
 
                   // Record cancel listing transaction
-                  activity.push(cancelListingTransaction);
+                  txHistory.push(cancelListingTransaction);
                 }
 
                 if (inx.parsed.type === "setAuthority") {
@@ -353,13 +397,13 @@ export const fetchActivityHistory = async (address: string) => {
                     // transaction data.
                     const listingTransaction: ListingTransaction = {
                       tx,
-                      type: TransactionType.Listing,
                       seller: authority,
+                      type: TransactionType.Listing,
                       signatures: tx.transaction.signatures,
                     };
 
                     // Record listing transaction
-                    activity.push(listingTransaction);
+                    txHistory.push(listingTransaction);
                   } else if (authority === MAGIC_EDEN_LISTING_ACCOUNT) {
                     // If the current authority is the Magic Eden listing
                     // account it is a cancel listing transaction if there is
@@ -368,13 +412,13 @@ export const fetchActivityHistory = async (address: string) => {
                       const cancelListingTransaction: CancelListingTransaction =
                         {
                           tx,
-                          type: TransactionType.CancelListing,
                           seller: newAuthority,
+                          type: TransactionType.CancelListing,
                           signatures: tx.transaction.signatures,
                         };
 
                       // Record cancel listing transaction
-                      activity.push(cancelListingTransaction);
+                      txHistory.push(cancelListingTransaction);
                     } else {
                       // Otherwise it is a sale
                       isSaleTransaction = true;
@@ -390,14 +434,14 @@ export const fetchActivityHistory = async (address: string) => {
             if (isSaleTransaction) {
               const saleTransaction: SaleTransaction = {
                 tx,
+                buyer,
                 type: TransactionType.Sale,
                 lamports: lamportsTransferred,
-                buyer,
                 signatures: tx.transaction.signatures,
               };
 
               // Record sale transaction
-              activity.push(saleTransaction);
+              txHistory.push(saleTransaction);
             }
           }
         }
@@ -405,16 +449,18 @@ export const fetchActivityHistory = async (address: string) => {
     }
   }
 
-  // Sort all discovered transactions by block time to get the correct order
-  const history = activity.sort((a, b) => {
-    const aTime = a.tx.blockTime;
-    const bTime = b.tx.blockTime;
-    if (aTime && bTime) {
-      return bTime - aTime;
-    } else {
-      return 1;
-    }
-  });
+  return txHistory;
+};
 
-  return history;
+/**
+ * Sort transactions by blockTime.
+ */
+const sortByBlockTime = (a: TransactionVariant, b: TransactionVariant) => {
+  const aTime = a.tx.blockTime;
+  const bTime = b.tx.blockTime;
+  if (aTime && bTime) {
+    return bTime - aTime;
+  } else {
+    return 1;
+  }
 };
