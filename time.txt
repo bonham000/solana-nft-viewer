@@ -1,4 +1,4 @@
-Total Time = 18 hours
+Total Time = 12 hours
 
 Sunday January 30, 2020:
 4pm - 8pm (4 hours)
@@ -36,3 +36,10 @@ Wednesday, February 2, 2022:
 - Perform final round of QA and checking numerous Magic Eden collection items
 - Find and resolve a few issues deriving correct activity history
 - Remove temporary debugging code
+
+Thursday, February 3, 2022:
+12pm - 2pm (2 hours)
+- Fix displaying correct new owner address for transfer transactions
+- Correctly identify minter address for multisig mint transactions
+- Add ErrorBoundary for rendering App
+- Refactor fetch mint history function for better readability
