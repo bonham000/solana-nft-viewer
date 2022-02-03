@@ -54,6 +54,18 @@ export const fetchNftMetadata = async (
   return metadata;
 };
 
+/**
+ * Call the fetchNftMetadata function which will throw for invalid addresses.
+ *
+ * NOTE: This fetchNftMetadata is now called twice. The responses could be
+ * cached locally to avoid repeating making requests to the RPC node if that
+ * was a concern, however these requests appear to be handled quickly and
+ * easily without issue.
+ */
+const validateMintAddress = async (address: string) => {
+  await fetchNftMetadata(address);
+};
+
 // This is the mainnet authority which is used by Magic Eden for listing
 // NFTs. The address is used to identify Magic Eden marketplace related
 // transactions.
@@ -101,6 +113,9 @@ const DELEGATE_ADDRESS = "1BWutmTvYPwDtmw9abTkS4Ssr8no61spGAvW1X6NDix";
 export const fetchActivityHistoryForMintAddress = async (
   address: string,
 ): Promise<NftHistory> => {
+  // This will throw if the address is invalid
+  await validateMintAddress(address);
+
   // First process the transaction history for the mint address
   const result = await scanMintAddressHistory(address);
   const { mintAddressHistory, tokenAccounts } = result;
