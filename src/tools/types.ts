@@ -55,7 +55,7 @@ export interface MintTransaction extends TransactionBase {
 export interface TransferTransaction extends TransactionBase {
   type: TransactionType.Transfer;
   source: string;
-  destination: string;
+  newOwnerAddress: null | string;
 }
 
 export interface ListingTransaction extends TransactionBase {

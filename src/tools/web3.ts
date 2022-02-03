@@ -64,6 +64,9 @@ const MULTI_SIG_ADDRESSES = new Set([
   "F4ghBzHFNgJxV4wEQDchU5i7n4XWWMBSaq7CuswGiVsr",
 ]);
 
+// This appears to be a new address involved in Sale transactions
+const DELEGATE_ADDRESS = "1BWutmTvYPwDtmw9abTkS4Ssr8no61spGAvW1X6NDix";
+
 /**
  * Fetch NFT activity history for a given mint address.
  *
@@ -146,11 +149,27 @@ export const fetchActivityHistory = async (address: string) => {
             const mint = inx.parsed.info.mint;
             if (mint === address) {
               const source: string = inx.parsed.info.source;
-              const destination: string = inx.parsed.info.destination;
+              const destinationAccount: string = inx.parsed.info.destination;
+
+              // Find the owner of the destination token account. This
+              // is a bit tricky, we can look for the associated account
+              // create transaction or try to look up the account info.
+              let newOwnerAddress = null;
+
+              const createTx = instructions.find((x) => {
+                return "parsed" in x && x.parsed.type === "create";
+              });
+
+              if (createTx) {
+                if ("parsed" in createTx) {
+                  newOwnerAddress = createTx.parsed.info.wallet;
+                }
+              }
+
               const transferTransaction: TransferTransaction = {
                 tx,
                 source,
-                destination,
+                newOwnerAddress,
                 type: TransactionType.Transfer,
                 signatures: tx.transaction.signatures,
               };
@@ -159,7 +178,7 @@ export const fetchActivityHistory = async (address: string) => {
               activity.push(transferTransaction);
 
               // Capture destination token account
-              tokenAccounts.add(destination);
+              tokenAccounts.add(destinationAccount);
             }
           }
         }
@@ -211,6 +230,8 @@ export const fetchActivityHistory = async (address: string) => {
 
   const tokenAccountsList = Array.from(tokenAccounts);
 
+  const checkedTransactions = new Set();
+
   // For each identified token account for the given mint address, search
   // its transaction history and identify transactions related to Magic Eden
   // using Magic Eden program IDs. Record these transactions in the activity
@@ -223,6 +244,15 @@ export const fetchActivityHistory = async (address: string) => {
     );
 
     for (const tx of txs) {
+      const signature = tx?.transaction.signatures.join("");
+
+      // Avoid evaluating thte same transaction twice
+      if (checkedTransactions.has(signature)) {
+        continue;
+      }
+
+      checkedTransactions.add(signature);
+
       const innerInstructions = tx?.meta?.innerInstructions;
       if (innerInstructions) {
         for (const innerInstruction of innerInstructions) {
@@ -254,7 +284,10 @@ export const fetchActivityHistory = async (address: string) => {
                 // authority. These also represent sale transactions.
                 if (inx.parsed.type === "transfer") {
                   const multisig = inx.parsed.info.multisigAuthority;
-                  if (MULTI_SIG_ADDRESSES.has(multisig)) {
+                  if (
+                    MULTI_SIG_ADDRESSES.has(multisig) ||
+                    inx.parsed.info.authority === DELEGATE_ADDRESS
+                  ) {
                     // This is getting a bit hacky but in this variation of
                     // sale transactions there is a closeAccount instruction,
                     // a transfer instruction (this one), and other transfer
@@ -265,6 +298,35 @@ export const fetchActivityHistory = async (address: string) => {
                       isSaleTransaction = true;
                     }
                   }
+                }
+
+                // Another type of listing transaction. This one appears to be
+                // newer.
+                if (inx.parsed.type === "approve") {
+                  const delegate = inx.parsed.info.delegate;
+                  if (delegate === DELEGATE_ADDRESS) {
+                    const listingTransaction: ListingTransaction = {
+                      tx,
+                      type: TransactionType.Listing,
+                      seller: inx.parsed.info.owner,
+                      signatures: tx.transaction.signatures,
+                    };
+
+                    // Record cancel listing transaction
+                    activity.push(listingTransaction);
+                  }
+                }
+
+                if (inx.parsed.type === "revoke") {
+                  const cancelListingTransaction: CancelListingTransaction = {
+                    tx,
+                    type: TransactionType.CancelListing,
+                    seller: inx.parsed.info.owner,
+                    signatures: tx.transaction.signatures,
+                  };
+
+                  // Record cancel listing transaction
+                  activity.push(cancelListingTransaction);
                 }
 
                 if (inx.parsed.type === "setAuthority") {

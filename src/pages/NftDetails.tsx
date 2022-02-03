@@ -344,11 +344,16 @@ const renderTransactionTitle = (tx: TransactionVariants) => {
         </span>
       );
     case TransactionType.Transfer:
-      return (
-        <span>
-          Transferred to <AddressComponent address={tx.destination} />
-        </span>
-      );
+      // If this happens handle it rather than throwing an error
+      if (tx.newOwnerAddress === null) {
+        return <span>Transferred to ...?</span>;
+      } else {
+        return (
+          <span>
+            Transferred to <AddressComponent address={tx.newOwnerAddress} />
+          </span>
+        );
+      }
     case TransactionType.Listing:
       return (
         <span>
