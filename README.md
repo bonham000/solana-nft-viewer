@@ -1,6 +1,8 @@
 # Nifty Information
 
-View metadata and transaction history about a Solana NFT given its mint address.
+View metadata and Magic Eden transaction history about a Solana NFT given its mint address.
+
+<img width="1440" alt="kitten-coup" src="https://user-images.githubusercontent.com/18126719/152432583-c494969c-9a6c-419a-b60a-3db72f8b7a85.png">
 
 ## Project Structure
 
