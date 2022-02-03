@@ -1,5 +1,6 @@
 {
   "name": "solana-nft-viewer",
+  "description": "View Solana NFTs",
   "version": "0.1.0",
   "private": true,
   "scripts": {
