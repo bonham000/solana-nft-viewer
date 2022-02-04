@@ -11,9 +11,9 @@ The repo is organized as a fairly standard React project.
     .
     ├── ...                   # Other project config files/folders
     ├── src                   # Main source folder
-    │   ├── pages             # Folder for main UI pages
     │   ├── test              # Unit tests folder
     │   ├── tools             # Utils and helpers folder
+    │   ├── ui                # Folder for UI components
     │   └── App.tsx           # Main App file
     ├── package.json
     └── README
