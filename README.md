@@ -38,7 +38,7 @@ $ yarn eslint
 # Run unit tests
 $ yarn test
 
-# Run all tests
+# Run all checks
 $ yarn test:all
 ```
 
