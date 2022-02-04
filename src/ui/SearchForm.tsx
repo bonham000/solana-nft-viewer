@@ -22,7 +22,6 @@ const SearchForm: React.FC = () => {
     const { pathname } = location;
     if (pathname.includes("/nft/")) {
       const urlAddress = pathname.replace("/nft/", "");
-      console.log(urlAddress);
       if (validateAddressAsPublicKey(urlAddress)) {
         // If the address is valid select it
         setAddress(urlAddress);
