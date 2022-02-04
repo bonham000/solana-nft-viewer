@@ -44,6 +44,7 @@
     "web-vitals": "^2.1.0"
   },
   "devDependencies": {
+    "jest-fetch-mock": "^3.0.3",
     "prettier": "^2.5.1"
   },
   "eslintConfig": {
