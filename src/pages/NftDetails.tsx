@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { useParams } from "react-router-dom";
 import { Shimmer } from "react-shimmer";
 import {
+  NftHistory,
   NftMetadata,
   TransactionType,
   TransactionVariant,
@@ -38,7 +39,7 @@ import { ResultLoading, Result, Ok, Err, matchResult } from "../tools/result";
 
 type PriceState = Result<BN, Error>;
 type NftMetadataState = Result<NftMetadata, Error>;
-type TokenHistoryState = Result<TransactionVariant[], Error>;
+type NftHistoryState = Result<NftHistory, Error>;
 
 const NftDetails: React.FC = () => {
   // Derive current address from URL params
@@ -51,19 +52,19 @@ const NftDetails: React.FC = () => {
   const [nftMetadataState, setNftMetadataState] = useState<NftMetadataState>(
     ResultLoading(),
   );
-  const [tokenHistoryState, setTokenHistoryState] = useState<TokenHistoryState>(
+  const [tokenHistoryState, setNftHistoryState] = useState<NftHistoryState>(
     ResultLoading(),
   );
 
   // Reset state when the address changes
   useEffect(() => {
     setNftMetadataState(ResultLoading());
-    setTokenHistoryState(ResultLoading());
+    setNftHistoryState(ResultLoading());
   }, [address]);
 
   // Handle fetching NFT metadata
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchMetadata = async () => {
       try {
         const result = await fetchNftMetadata(address);
         setNftMetadataState(Ok(result));
@@ -72,7 +73,7 @@ const NftDetails: React.FC = () => {
       }
     };
 
-    fetchHistory();
+    fetchMetadata();
   }, [address]);
 
   // Handle fetching NFT activity history
@@ -80,9 +81,9 @@ const NftDetails: React.FC = () => {
     const fetchHistory = async () => {
       try {
         const result = await fetchActivityHistoryForMintAddress(address);
-        setTokenHistoryState(Ok(result));
+        setNftHistoryState(Ok(result));
       } catch (err) {
-        setTokenHistoryState(Err(err as Error));
+        setNftHistoryState(Err(err as Error));
       }
     };
 
@@ -105,7 +106,7 @@ const NftDetails: React.FC = () => {
   }, 10_000);
 
   return (
-    <TxContainer>
+    <NftDetailsContainer>
       {matchResult(nftMetadataState, {
         ok: (nftMetadata) => (
           <ImageContainer>
@@ -162,7 +163,7 @@ const NftDetails: React.FC = () => {
           );
         },
       })}
-    </TxContainer>
+    </NftDetailsContainer>
   );
 };
 
@@ -171,7 +172,7 @@ const NftDetails: React.FC = () => {
  * ============================================================================
  */
 
-const TxContainer = styled.div`
+const NftDetailsContainer = styled.div`
   width: 500px;
   padding-bottom: 45px;
 

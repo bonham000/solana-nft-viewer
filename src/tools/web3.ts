@@ -355,10 +355,11 @@ const scanTokenAccountList = async (
                 // Identify transfers which involve this special multisig
                 // authority. These also represent sale transactions.
                 if (inx.parsed.type === "transfer") {
+                  const authority = inx.parsed.info.authority;
                   const multisig = inx.parsed.info.multisigAuthority;
                   if (
-                    MULTI_SIG_ADDRESSES.has(multisig) ||
-                    inx.parsed.info.authority === DELEGATE_ADDRESS
+                    authority === DELEGATE_ADDRESS ||
+                    MULTI_SIG_ADDRESSES.has(multisig)
                   ) {
                     // This is getting a bit hacky but in this variation of
                     // sale transactions there is a closeAccount instruction,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 import {
   BrowserRouter as Router,
@@ -30,8 +30,8 @@ function App() {
   const [address, setAddress] = React.useState("");
   const searchInput = React.useRef<HTMLInputElement>(null);
 
-  // Reset entered address on navigation back to base route
-  React.useEffect(() => {
+  // Try to pull address from url if pages loads on /nft/:address route
+  useEffect(() => {
     const { pathname } = location;
     if (pathname.includes("/nft/")) {
       const urlAddress = pathname.replace("/nft/", "");
@@ -47,7 +47,7 @@ function App() {
   }, [location, navigate]);
 
   // Reset entered address on navigation back to base route
-  React.useEffect(() => {
+  useEffect(() => {
     if (location.pathname === "/") {
       setAddress("");
     }
