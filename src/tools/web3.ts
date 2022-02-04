@@ -14,7 +14,8 @@ import {
 import BN from "bignumber.js";
 
 /**
- * Establish Solana connection.
+ * Establish Solana connection. Currently the app only connects to the
+ * mainnet-beta cluster.
  */
 const connection = new Connection(clusterApiUrl("mainnet-beta"));
 

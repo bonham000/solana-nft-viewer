@@ -52,7 +52,7 @@ const NftDetails: React.FC = () => {
   const [nftMetadataState, setNftMetadataState] = useState<NftMetadataState>(
     ResultLoading(),
   );
-  const [tokenHistoryState, setNftHistoryState] = useState<NftHistoryState>(
+  const [nftHistoryState, setNftHistoryState] = useState<NftHistoryState>(
     ResultLoading(),
   );
 
@@ -130,17 +130,17 @@ const NftDetails: React.FC = () => {
         ),
       })}
       <TxTitle>ACTIVITY</TxTitle>
-      {matchResult(tokenHistoryState, {
-        ok: (history) => {
-          if (history.length === 0) {
+      {matchResult(nftHistoryState, {
+        ok: (nftHistory) => {
+          if (nftHistory.length === 0) {
             return <EmptyHistoryText>No history found.</EmptyHistoryText>;
           }
 
-          return history.map((tx) => (
+          return nftHistory.map((tx) => (
             <Tx key={tx.signatures.join("")}>
               <TxLeft>
                 <TxHeading>{renderTransactionTitle(tx)}</TxHeading>
-                <DateTimeComponent time={tx.tx.blockTime} />
+                <DateTimeComponent blockTime={tx.tx.blockTime} />
               </TxLeft>
               <PriceDataComponent tx={tx} priceState={priceState} />
             </Tx>
@@ -302,9 +302,10 @@ const TxSubHeading = styled(TxText)`
 /**
  * Render date time for a given transaction blockTime.
  */
-const DateTimeComponent = (props: { time: number | null | undefined }) => {
-  if (typeof props.time === "number") {
-    return <TxSubHeading>{formatDate(props.time * 1000)}</TxSubHeading>;
+const DateTimeComponent = (props: { blockTime: number | null | undefined }) => {
+  if (typeof props.blockTime === "number") {
+    const milliseconds = props.blockTime * 1000;
+    return <TxSubHeading>{formatDate(milliseconds)}</TxSubHeading>;
   } else {
     return <TxSubHeading>Unknown block time</TxSubHeading>;
   }
