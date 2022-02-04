@@ -5,7 +5,7 @@ import {
   formatFiatPrice,
   formatNumber,
   lamportsToSOL,
-  validateAddressAsPublicKey,
+  isAddressValidPublicKey,
 } from "../tools/utils";
 import BN from "bignumber.js";
 
@@ -36,11 +36,9 @@ describe("utils tests", () => {
   });
 
   test("validateAddressAsPublicKey", () => {
-    expect(validateAddressAsPublicKey("sad8f07as0df")).toBe(false);
+    expect(isAddressValidPublicKey("sad8f07as0df")).toBe(false);
     expect(
-      validateAddressAsPublicKey(
-        "CmUFv7vaErzGknimoJyMvv6Fmhn3q4bHLK7fJWdW6m3p",
-      ),
+      isAddressValidPublicKey("CmUFv7vaErzGknimoJyMvv6Fmhn3q4bHLK7fJWdW6m3p"),
     ).toBe(true);
   });
 

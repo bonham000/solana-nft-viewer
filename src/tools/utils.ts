@@ -58,7 +58,7 @@ export const lamportsToSOL = (lamports: BN) => {
 /**
  * Check if a string address is a valid Solana public key.
  */
-export const validateAddressAsPublicKey = (address: string) => {
+export const isAddressValidPublicKey = (address: string) => {
   try {
     new PublicKey(address);
     return true;

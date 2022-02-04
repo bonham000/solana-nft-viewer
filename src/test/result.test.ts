@@ -33,12 +33,13 @@ describe("Result Type", () => {
   });
 
   test("matchResult loading variant", () => {
+    const expected = "Loading Variant";
     const result = matchResult(ResultLoading(), {
       ok: throwError,
       err: throwError,
-      loading: () => "Loading Variant",
+      loading: () => expected,
     });
 
-    expect(result).toBe("Loading Variant");
+    expect(result).toBe(expected);
   });
 });

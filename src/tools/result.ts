@@ -10,8 +10,8 @@ import { assertUnreachable } from "./utils";
  */
 export type Result<T, E> =
   | { ok: true; value: T }
-  | { ok: false; loading: true }
-  | { ok: false; loading: false; error: E };
+  | { ok: false; error: E }
+  | { ok: false; loading: true };
 
 export const Ok = <T>(value: T): Result<T, never> => ({
   ok: true,
@@ -19,9 +19,8 @@ export const Ok = <T>(value: T): Result<T, never> => ({
 });
 
 export const Err = <E>(error: E): Result<never, E> => ({
-  error,
   ok: false,
-  loading: false,
+  error,
 });
 
 export const ResultLoading = (): Result<never, never> => ({
@@ -44,10 +43,10 @@ export const matchResult = <T, E, R1, R2, R3>(
   x: Result<T, E>,
   matcher: ResultMatcher<T, E, R1, R2, R3>,
 ) => {
-  if ("loading" in x && x.loading === true) {
+  if ("loading" in x) {
     // Loading State
     return matcher.loading();
-  } else if ("error" in x && x.ok === false) {
+  } else if ("error" in x) {
     // Error State
     return matcher.err(x.error);
   } else if (x.ok === true) {

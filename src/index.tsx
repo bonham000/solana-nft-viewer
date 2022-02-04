@@ -13,6 +13,7 @@ class ErrorBoundary extends React.Component {
     hasError: false,
   };
 
+  // Handle other side effects here, e.g. logging/reporting
   componentDidCatch(error: any) {
     console.error(error);
     this.setState({ hasError: true });
@@ -20,16 +21,16 @@ class ErrorBoundary extends React.Component {
 
   render(): React.ReactNode {
     return this.state.hasError ? (
-      <ErrorFallback>
+      <ErrorFallbackContainer>
         <p>Oops, something bad happened... 😰</p>
-      </ErrorFallback>
+      </ErrorFallbackContainer>
     ) : (
       this.props.children
     );
   }
 }
 
-const ErrorFallback = styled.div`
+const ErrorFallbackContainer = styled.div`
   position: fixed;
   width: 100%;
   height: 100%;

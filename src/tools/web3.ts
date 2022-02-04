@@ -74,7 +74,7 @@ const MAGIC_EDEN_LISTING_ACCOUNT =
   "GUfCR9mK6azb9vcpsxgXyj7XRPAKJd4KMHTTVvtncGgp";
 
 // It's not entirely clear what addresses these are, but they appear to also
-// be associated with Sale transactions. They could be more which needed to
+// be associated with Sale transactions. There could be more which needed to
 // be added to this list.
 const MULTI_SIG_ADDRESSES = new Set([
   "4pUQS4Jo2dsfWzt3VgHXy3H6RYnEDd11oWPiaM2rdAPw",

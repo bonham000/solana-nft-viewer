@@ -2,12 +2,14 @@ import React, { useEffect } from "react";
 import styled from "styled-components";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaSearch, FaTimesCircle } from "react-icons/fa";
-import { validateAddressAsPublicKey } from "../tools/utils";
+import { isAddressValidPublicKey } from "../tools/utils";
 import toast from "react-hot-toast";
 import { COLORS as C } from "../tools/colors";
 
 /** ===========================================================================
  * Search Form Component
+ * ----------------------------------------------------------------------------
+ * This component renders the mint address input form.
  * ============================================================================
  */
 
@@ -22,7 +24,7 @@ const SearchForm: React.FC = () => {
     const { pathname } = location;
     if (pathname.includes("/nft/")) {
       const urlAddress = pathname.replace("/nft/", "");
-      if (validateAddressAsPublicKey(urlAddress)) {
+      if (isAddressValidPublicKey(urlAddress)) {
         // If the address is valid select it
         setAddress(urlAddress);
       } else {
@@ -43,7 +45,7 @@ const SearchForm: React.FC = () => {
   // Handle search address on form submit (Enter key pressed)
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (validateAddressAsPublicKey(address)) {
+    if (isAddressValidPublicKey(address)) {
       // Blur input on submit
       if (searchInput.current) {
         searchInput.current.blur();
