@@ -48,6 +48,9 @@ describe("web3 tests", () => {
    * a sanity check that expected behavior doesn't break.
    */
   test("fetchActivityHistoryForMintAddress", async () => {
+    // Extend Jest timeout
+    jest.setTimeout(10_000);
+
     const address = "GPgf9QFoJ3XagLBLWLG9j2Ehtw5ycoXn8hYZuJL4GWQn";
     const txs = await fetchActivityHistoryForMintAddress(address);
 
