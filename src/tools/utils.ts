@@ -21,7 +21,7 @@ export const formatDate = (date: number) => {
   const day = format(new Date(date), "MMM dd, yyyy");
 
   // NOTE: For some reason 'a' am/pm option is not respected as lowercase
-  const time = format(new Date(date), "hh:mma").toLowerCase();
+  const time = format(new Date(date), "h:mma").toLowerCase();
 
   return `${day} at ${time}`;
 };

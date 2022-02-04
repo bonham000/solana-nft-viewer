@@ -23,13 +23,14 @@ const SearchForm: React.FC = () => {
   useEffect(() => {
     const { pathname } = location;
     if (pathname.includes("/nft/")) {
-      const urlAddress = pathname.replace("/nft/", "");
-      if (isAddressValidPublicKey(urlAddress)) {
-        // If the address is valid select it
-        setAddress(urlAddress);
+      const addressParam = pathname.replace("/nft/", "");
+      if (isAddressValidPublicKey(addressParam)) {
+        setAddress(addressParam);
       } else {
-        // Otherwise redirect to / and notify the user with a toast
-        toast.error("Invalid address provided in url.");
+        if (addressParam !== "") {
+          toast.error("Invalid address provided in url.");
+        }
+
         navigate("/");
       }
     }
@@ -52,7 +53,7 @@ const SearchForm: React.FC = () => {
       }
 
       navigate(`/nft/${address}`);
-    } else {
+    } else if (address !== "") {
       toast.error("Please check the address format.");
     }
   };
