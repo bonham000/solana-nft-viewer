@@ -77,10 +77,10 @@ const Header = styled.div`
 `;
 
 const HeaderTitle = styled.h1`
+  margin: 0;
   color: white;
   font-size: 16px;
   font-weight: 500;
-  margin: 0;
   text-decoration: none !important;
 `;
 

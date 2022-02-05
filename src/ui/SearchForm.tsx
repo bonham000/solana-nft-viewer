@@ -93,38 +93,38 @@ const SearchForm: React.FC = () => {
  */
 
 const Form = styled.form`
+  height: 128px;
+  margin-top: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 14px;
-  height: 128px;
 `;
 
 const SearchInput = styled.input`
   width: 500px;
   height: 45px;
-  border-radius: 48px;
-  border: 1px solid ${C.whiteLight};
   outline: none;
   padding-left: 42px;
   padding-right: 42px;
+  border-radius: 48px;
+  border: 1px solid ${C.whiteLight};
 
-  @media (max-width: 500px) {
+  @media (max-width: 600px) {
     width: 65vw;
     font-size: 12px;
   }
 `;
 
 const SearchIcon = styled(FaSearch)`
-  position: relative;
-  right: -32px;
   color: ${C.gray};
+  right: -32px;
+  position: relative;
 `;
 
 const ClearIcon = styled(FaTimesCircle)`
-  position: relative;
-  left: -32px;
   color: ${C.gray};
+  left: -32px;
+  position: relative;
 
   :hover {
     cursor: pointer;

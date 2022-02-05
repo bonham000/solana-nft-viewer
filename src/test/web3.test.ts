@@ -1,16 +1,36 @@
 import fetch from "jest-fetch-mock";
-import { fetchActivityHistoryForMintAddress } from "../tools/web3";
+import {
+  fetchActivityHistoryForMintAddress,
+  fetchSolPrice,
+} from "../tools/web3";
 
 // Extend Jest timeout
 jest.setTimeout(10_000);
 
 describe("web3 tests", () => {
+  test("fetchSolPrice", async () => {
+    const price = 215.28;
+    const response = {
+      solana: {
+        usd: price,
+      },
+    };
+    fetchMock.mockOnce(JSON.stringify(response));
+
+    const result = await fetchSolPrice();
+    expect(result.toString()).toBe(String(price));
+  });
+
   /**
-   * For some reason the @metaplex/js library fails to return some of the
-   * NFT metadata when running in the NodeJS/Jest environment. Mock the
-   * metadata response here so the test can proceed.
+   * Basic test for the fetchActivityHistoryForMintAddress function to provide
+   * a sanity check that expected behavior doesn't break.
    */
-  beforeEach(() => {
+  test("fetchActivityHistoryForMintAddress", async () => {
+    /**
+     * For some reason the @metaplex/js library fails to return some of the
+     * NFT metadata when running in the NodeJS/Jest environment. Mock the
+     * metadata response here so the test can proceed.
+     */
     const metadata = {
       name: "MBB #2047",
       symbol: "MBB",
@@ -44,13 +64,7 @@ describe("web3 tests", () => {
     };
 
     fetch.mockOnce(JSON.stringify(metadata));
-  });
 
-  /**
-   * Basic test for the fetchActivityHistoryForMintAddress function to provide
-   * a sanity check that expected behavior doesn't break.
-   */
-  test("fetchActivityHistoryForMintAddress", async () => {
     const address = "GPgf9QFoJ3XagLBLWLG9j2Ehtw5ycoXn8hYZuJL4GWQn";
     const txs = await fetchActivityHistoryForMintAddress(address);
 

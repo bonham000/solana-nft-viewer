@@ -44,7 +44,7 @@ type NftHistoryState = Result<NftHistory, Error>;
 const NftDetails: React.FC = () => {
   // Derive current address from URL params
   const params = useParams();
-  // Address should exist since router matched and render this page
+  // Address should exist since router matched and rendered this page
   const address = params.address as string;
 
   // Setup state
@@ -117,7 +117,7 @@ const NftDetails: React.FC = () => {
         loading: () => (
           <ImageContainer>
             <ImageShimmer />
-            <div style={{ height: 137 }} />
+            <ImageLoadingSpacer />
           </ImageContainer>
         ),
         err: () => (
@@ -176,21 +176,17 @@ const NftDetailsContainer = styled.div`
   width: 500px;
   padding-bottom: 45px;
 
-  @media (max-width: 500px) {
+  @media (max-width: 550px) {
     width: 85vw;
   }
 `;
 
 const ImageContainer = styled.div`
+  height: 330px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  height: 330px;
-
-  .image-shimmer {
-    border-radius: 16px;
-  }
 `;
 
 const NFT = styled.img`
@@ -203,6 +199,10 @@ const NFT = styled.img`
 const ImageLoadingContainer = styled.div`
   width: 235px;
   height: 235px;
+
+  .image-shimmer {
+    border-radius: 16px;
+  }
 `;
 
 const ImageShimmer = () => {
@@ -212,6 +212,10 @@ const ImageShimmer = () => {
     </ImageLoadingContainer>
   );
 };
+
+const ImageLoadingSpacer = styled.div`
+  height: 137px;
+`;
 
 /**
  * Render ... with an interval animation to suggest loading behavior.
@@ -334,8 +338,8 @@ const PriceDataComponent = (props: {
     <TxRight>
       <TxHeadingPrice>{formatNumber(sol)} ◎</TxHeadingPrice>
       {matchResult(priceState, {
-        ok: (solPrice) => (
-          <TxSubHeading>{formatFiatPrice(sol, solPrice)}</TxSubHeading>
+        ok: (solUsdPrice) => (
+          <TxSubHeading>{formatFiatPrice(sol, solUsdPrice)}</TxSubHeading>
         ),
         loading: () => <TxSubHeading>Loading SOL price...</TxSubHeading>,
         err: () => <TxSubHeading>Failed to load SOL price.</TxSubHeading>,

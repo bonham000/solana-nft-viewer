@@ -13,12 +13,6 @@ import {
 } from "./types";
 import BN from "bignumber.js";
 
-/**
- * Establish Solana connection. Currently the app only connects to the
- * mainnet-beta cluster.
- */
-const connection = new Connection(clusterApiUrl("mainnet-beta"));
-
 interface SolPriceResponse {
   solana: {
     usd: number;
@@ -37,6 +31,12 @@ export const fetchSolPrice = async () => {
   const solPrice = new BN(data.solana.usd);
   return solPrice;
 };
+
+/**
+ * Establish Solana connection. Currently the app only connects to the
+ * mainnet-beta cluster.
+ */
+const connection = new Connection(clusterApiUrl("mainnet-beta"));
 
 /**
  * Fetch NFT token metadata. This function derives the on-chain metadata using
@@ -128,7 +128,7 @@ export const fetchActivityHistoryForMintAddress = async (
   const txHistory = mintAddressHistory.concat(tokenAccountsHistory);
 
   // Sort the history by blockTime
-  const history = txHistory.sort(sortByBlockTime);
+  const history = txHistory.sort(sortTxsByBlockTime);
 
   return history;
 };
@@ -473,7 +473,7 @@ const scanTokenAccountList = async (
 /**
  * Sort transactions by blockTime.
  */
-const sortByBlockTime = (a: TransactionVariant, b: TransactionVariant) => {
+const sortTxsByBlockTime = (a: TransactionVariant, b: TransactionVariant) => {
   const aTime = a.tx.blockTime;
   const bTime = b.tx.blockTime;
   if (aTime && bTime) {
