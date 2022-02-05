@@ -165,26 +165,30 @@ const scanMintAddressHistory = async (address: string) => {
 
           // Mint transaction
           if (type === "mintTo") {
+            let mint = inx.parsed.info.mint;
             let minter = inx.parsed.info.mintAuthority;
             let multisigMinter = inx.parsed.info.multisigMintAuthority;
 
-            // If there is no regular authority it probably a multisig address:
-            if (!minter && multisigMinter) {
-              minter = multisigMinter;
+            // Ensure the mint address matches the provided address
+            if (mint === address) {
+              // If there is no regular authority it probably a multisig address:
+              if (!minter && multisigMinter) {
+                minter = multisigMinter;
+              }
+
+              const mintTransaction: MintTransaction = {
+                tx,
+                minter,
+                type: TransactionType.Mint,
+                signatures: tx.transaction.signatures,
+              };
+
+              // Record mint transaction
+              mintAddressHistory.push(mintTransaction);
+
+              // Capture mintTo target account
+              tokenAccounts.add(inx.parsed.info.account);
             }
-
-            const mintTransaction: MintTransaction = {
-              tx,
-              minter,
-              type: TransactionType.Mint,
-              signatures: tx.transaction.signatures,
-            };
-
-            // Record mint transaction
-            mintAddressHistory.push(mintTransaction);
-
-            // Capture mintTo target account
-            tokenAccounts.add(inx.parsed.info.account);
           }
 
           // Create associated token account transactions
@@ -202,23 +206,38 @@ const scanMintAddressHistory = async (address: string) => {
             if (mint === address) {
               const source: string = inx.parsed.info.source;
               const destination: string = inx.parsed.info.destination;
-              const destinationAccount: string = inx.parsed.info.destination;
 
               // Find the owner of the destination token account. This
               // is a bit tricky, we can look for the associated account
               // create transaction or try to look up the account info.
               let newOwnerAddress = null;
 
-              // NOTE: Some transfers will not include this create instruction.
-              // In those cases, It's unclear how to find the new owner's
-              // address for these.
-              const createTx = instructions.find((x) => {
+              // First try to find the new owner address by searching for the
+              // create instruction in the transfer instructions.
+              const createIx = instructions.find((x) => {
                 return "parsed" in x && x.parsed.type === "create";
               });
 
-              if (createTx) {
-                if ("parsed" in createTx) {
-                  newOwnerAddress = createTx.parsed.info.wallet;
+              if (createIx) {
+                if ("parsed" in createIx) {
+                  newOwnerAddress = createIx.parsed.info.wallet;
+                }
+              }
+
+              // If no new owner address was found above try to lookup the
+              // account info using the destination account and find the owner
+              // address. No account data will exist, I think, if the account
+              // was later closed. The results match what is displayed on
+              // the solscan block explorer for these transactions.
+              if (newOwnerAddress === null) {
+                const account = await connection.getParsedAccountInfo(
+                  new PublicKey(destination),
+                );
+
+                if (account.value) {
+                  if ("parsed" in account.value.data) {
+                    newOwnerAddress = account.value.data.parsed.info.owner;
+                  }
                 }
               }
 
@@ -235,7 +254,7 @@ const scanMintAddressHistory = async (address: string) => {
               mintAddressHistory.push(transferTransaction);
 
               // Capture destination token account
-              tokenAccounts.add(destinationAccount);
+              tokenAccounts.add(destination);
             }
           }
         }
@@ -256,19 +275,24 @@ const scanMintAddressHistory = async (address: string) => {
 
             // Mint transaction
             if (type === "mintTo") {
-              const minter = inx.parsed.info.mintAuthority;
-              const mintTransaction: MintTransaction = {
-                tx,
-                minter,
-                type: TransactionType.Mint,
-                signatures: tx.transaction.signatures,
-              };
+              const mint = inx.parsed.info.mint;
 
-              // Record mint transaction
-              mintAddressHistory.push(mintTransaction);
+              // Ensure the mint address matches the provided address
+              if (mint === address) {
+                const minter = inx.parsed.info.mintAuthority;
+                const mintTransaction: MintTransaction = {
+                  tx,
+                  minter,
+                  type: TransactionType.Mint,
+                  signatures: tx.transaction.signatures,
+                };
 
-              // Capture mintTo target account
-              tokenAccounts.add(inx.parsed.info.account);
+                // Record mint transaction
+                mintAddressHistory.push(mintTransaction);
+
+                // Capture mintTo target account
+                tokenAccounts.add(inx.parsed.info.account);
+              }
             }
 
             // Create associated token account transactions
