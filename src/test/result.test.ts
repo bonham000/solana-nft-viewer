@@ -1,42 +1,44 @@
 import { Ok, Err, matchResult, ResultLoading } from "../tools/result";
 
 describe("Result Type", () => {
-  const throwError = () => {
-    throw new Error("Should not happen!");
+  const panic = () => {
+    throw new Error(
+      "matchResult matched a variant which should not be possible",
+    );
   };
 
   test("matchResult ok variant", () => {
-    const SOME_DATA = {
+    const expected = {
       flag: true,
       data: [1, 2, 3, 4, 5],
       description: "This is the data...",
     };
 
-    const result = matchResult(Ok(SOME_DATA), {
+    const result = matchResult(Ok(expected), {
       ok: (x) => x,
-      err: throwError,
-      loading: throwError,
+      err: panic,
+      loading: panic,
     });
 
-    expect(result).toEqual(SOME_DATA);
+    expect(result).toEqual(expected);
   });
 
   test("matchResult err variant", () => {
-    const errorString = "Error Variant";
-    const result = matchResult(Err(errorString), {
-      ok: throwError,
+    const expected = "Error Variant";
+    const result = matchResult(Err(expected), {
+      ok: panic,
       err: (e) => e,
-      loading: throwError,
+      loading: panic,
     });
 
-    expect(result).toBe(errorString);
+    expect(result).toBe(expected);
   });
 
   test("matchResult loading variant", () => {
     const expected = "Loading Variant";
     const result = matchResult(ResultLoading(), {
-      ok: throwError,
-      err: throwError,
+      ok: panic,
+      err: panic,
       loading: () => expected,
     });
 

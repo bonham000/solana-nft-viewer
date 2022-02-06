@@ -72,7 +72,10 @@ export const isAddressValidPublicKey = (address: string) => {
  * 7L15qmrXLQaSqPqq3e68cUNyqiyuvXEoRdmYmZpt3zcw -> 7L15...3zcw
  */
 export const abbreviateAddress = (address: string) => {
-  return `${address.slice(0, 4)}...${address.slice(address.length - 4)}`;
+  const size = 4;
+  const start = address.slice(0, size);
+  const end = address.slice(address.length - size);
+  return `${start}...${end}`;
 };
 
 /**
