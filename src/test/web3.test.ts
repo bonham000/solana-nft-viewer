@@ -4,8 +4,8 @@ import {
   fetchSolPrice,
 } from "../tools/web3";
 
-// Extend Jest timeout
-jest.setTimeout(10_000);
+// Extend Jest timeout - RPC request may take a while
+jest.setTimeout(15_000);
 
 describe("web3 tests", () => {
   test("fetchSolPrice", async () => {
