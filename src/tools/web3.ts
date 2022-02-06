@@ -40,8 +40,7 @@ const connection = new Connection(clusterApiUrl("mainnet-beta"));
 
 /**
  * Fetch NFT token metadata. This function derives the on-chain metadata using
- * the Metaplex SDK and then fetches the full metadata record stored on
- * Arweave.
+ * the Metaplex SDK and then fetches the full metadata record from Arweave.
  */
 export const fetchNftMetadata = async (
   address: string,
@@ -67,7 +66,7 @@ const validateMintAddress = async (address: string) => {
   await fetchNftMetadata(address);
 };
 
-// This is the mainnet authority which is used by Magic Eden for listing
+// This is the mainnet account which is used by Magic Eden for listing
 // NFTs. The address is used to identify Magic Eden marketplace related
 // transactions.
 const MAGIC_EDEN_LISTING_ACCOUNT =
@@ -86,7 +85,8 @@ const MULTI_SIG_ADDRESSES = new Set([
 const DELEGATE_ADDRESS = "1BWutmTvYPwDtmw9abTkS4Ssr8no61spGAvW1X6NDix";
 
 /**
- * Fetch NFT activity history for a given mint address.
+ * Fetch NFT activity history for a given mint address. The logic here is
+ * very imperative.
  *
  * This function goes through a few steps:
  *
@@ -127,7 +127,7 @@ export const fetchActivityHistoryForMintAddress = async (
   // Combine both of the above for the full activity history
   const txHistory = mintAddressHistory.concat(tokenAccountsHistory);
 
-  // Sort the history by blockTime
+  // Sort the combined history by blockTime
   const history = txHistory.sort(sortTxsByBlockTime);
 
   return history;
@@ -171,7 +171,8 @@ const scanMintAddressHistory = async (address: string) => {
 
             // Ensure the mint address matches the provided address
             if (mint === address) {
-              // If there is no regular authority it probably a multisig address:
+              // If there is no regular authority it is probably a multisig
+              // address:
               if (!minter && multisigMinter) {
                 minter = multisigMinter;
               }
@@ -226,7 +227,7 @@ const scanMintAddressHistory = async (address: string) => {
 
               // If no new owner address was found above try to lookup the
               // account info using the destination account and find the owner
-              // address. No account data will exist, I think, if the account
+              // address. No account data will exist, it seems, if the account
               // was later closed. The results match what is displayed on
               // the solscan block explorer for these transactions.
               if (newOwnerAddress === null) {
@@ -264,7 +265,7 @@ const scanMintAddressHistory = async (address: string) => {
 
   // For some transactions, it seems, the mint and some create associated
   // token account transactions can only be found in the inner instructions
-  // data.
+  // data. Search that here.
   for (const tx of txs) {
     const innerInstructions = tx?.meta?.innerInstructions;
     if (innerInstructions) {
@@ -317,7 +318,7 @@ const scanMintAddressHistory = async (address: string) => {
 
 /**
  * Fetch and process transaction history for associated token accounts to
- * identify marketplace related transactions (e.g. listing, listing
+ * identify Magic Eden marketplace related transactions (e.g. listing, listing
  * cancelled, purchase).
  */
 const scanTokenAccountList = async (
@@ -331,7 +332,7 @@ const scanTokenAccountList = async (
 
   // For each identified token account for the given mint address, search
   // its transaction history and identify transactions related to Magic Eden
-  // using Magic Eden program IDs. Record these transactions in the activity
+  // using Magic Eden accounts. Record these transactions in the activity
   // history.
   for (const tokenAccount of tokenAccountsList) {
     const pk = new PublicKey(tokenAccount);
@@ -343,7 +344,7 @@ const scanTokenAccountList = async (
     for (const tx of txs) {
       const signature = tx?.transaction.signatures.join("");
 
-      // Avoid evaluating the same transaction twice
+      // Avoid checking the same transaction twice
       if (checkedTransactions.has(signature)) {
         continue;
       }
@@ -410,7 +411,7 @@ const scanTokenAccountList = async (
                       signatures: tx.transaction.signatures,
                     };
 
-                    // Record cancel listing transaction
+                    // Record listing transaction
                     txHistory.push(listingTransaction);
                   }
                 }
@@ -434,9 +435,9 @@ const scanTokenAccountList = async (
                     // If the newAuthority is the Magic Eden listing account,
                     // this is a listing transaction.
                     // NOTE: It's unclear how to get the listing price for a
-                    // listing transaction data. It seems this information
-                    // may only be included in the Magic Eden encoded
-                    // transaction data.
+                    // listing transaction data. This data is encoded in the
+                    // Magic Eden instruction data, which would need to be
+                    // decoded.
                     const listingTransaction: ListingTransaction = {
                       tx,
                       seller: authority,
