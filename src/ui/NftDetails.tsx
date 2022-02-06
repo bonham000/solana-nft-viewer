@@ -90,20 +90,23 @@ const NftDetails: React.FC = () => {
     fetchHistory();
   }, [address]);
 
-  // Handle fetching current SOL USD price. Refreshes arbitrarily
-  // every 10 seconds.
-  useInterval(() => {
-    const fetchPriceData = async () => {
-      try {
-        const result = await fetchSolPrice();
-        setPriceState(Ok(result));
-      } catch (err) {
-        setPriceState(Err(err as Error));
-      }
-    };
+  // Handle fetching SOL USD price
+  const fetchPriceData = async () => {
+    try {
+      const result = await fetchSolPrice();
+      setPriceState(Ok(result));
+    } catch (err) {
+      setPriceState(Err(err as Error));
+    }
+  };
 
+  // Fetch SOL price on initial render
+  useEffect(() => {
     fetchPriceData();
-  }, 10_000);
+  }, []);
+
+  // Refetch SOL price every 10 seconds
+  useInterval(fetchPriceData, 10_000);
 
   return (
     <NftDetailsContainer>
