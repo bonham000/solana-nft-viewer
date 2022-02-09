@@ -1,6 +1,6 @@
 Total Time = 20 hours
 
-Sunday January 30, 2020:
+Sunday January 30, 2022:
 4pm - 8pm (4 hours)
 - Initial repo setup + basic project structure
 - Create basic routing and component structure
