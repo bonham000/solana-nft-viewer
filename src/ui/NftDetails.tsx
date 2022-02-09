@@ -12,7 +12,7 @@ import {
   fetchSolPrice,
   fetchNftMetadata,
   fetchActivityHistoryForMintAddress,
-} from "../tools/web3";
+} from "../tools/web3-original";
 import {
   formatDate,
   formatFiatPrice,
