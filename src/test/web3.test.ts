@@ -12,10 +12,10 @@ import {
 } from "../tools/web3-refactored";
 
 // Extend Jest timeout - RPC request may take a while
-jest.setTimeout(90_000);
+jest.setTimeout(120_000);
 
-// Delay some time
-const delay = async (time = 5000) => {
+// Delay some time to avoid getting rate limited by the RPC node
+const delay = async (time = 8000) => {
   await new Promise((_: any) => setTimeout(_, time));
 };
 
@@ -101,23 +101,28 @@ describe("web3 tests", () => {
       expect(data).toMatchInlineSnapshot(`
         Array [
           Object {
+            "marketplace": "Magic Eden",
             "seller": "5GUd38kYXm8FN6zkcH4ynBnmQsLZrModzraT9bM3dAYq",
             "type": "Listing",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "5GUd38kYXm8FN6zkcH4ynBnmQsLZrModzraT9bM3dAYq",
             "type": "CancelListing",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "5GUd38kYXm8FN6zkcH4ynBnmQsLZrModzraT9bM3dAYq",
             "type": "Listing",
           },
           Object {
             "buyer": "5GUd38kYXm8FN6zkcH4ynBnmQsLZrModzraT9bM3dAYq",
             "lamports": "11000000000",
+            "marketplace": "Magic Eden",
             "type": "Sale",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "GCJxBzQY26nz1TXdrNVESHEvQLdTMWGttr71Fq3LgGvW",
             "type": "Listing",
           },
@@ -142,48 +147,59 @@ describe("web3 tests", () => {
       expect(data).toMatchInlineSnapshot(`
         Array [
           Object {
+            "marketplace": "Magic Eden",
             "seller": "FvSce4MGwueaUFTb9NxUnqz5mabUdbeMfrCJxRvA1Y3L",
             "type": "Listing",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "FvSce4MGwueaUFTb9NxUnqz5mabUdbeMfrCJxRvA1Y3L",
             "type": "CancelListing",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "FvSce4MGwueaUFTb9NxUnqz5mabUdbeMfrCJxRvA1Y3L",
             "type": "Listing",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "FvSce4MGwueaUFTb9NxUnqz5mabUdbeMfrCJxRvA1Y3L",
             "type": "CancelListing",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "FvSce4MGwueaUFTb9NxUnqz5mabUdbeMfrCJxRvA1Y3L",
             "type": "Listing",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "FvSce4MGwueaUFTb9NxUnqz5mabUdbeMfrCJxRvA1Y3L",
             "type": "CancelListing",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "FvSce4MGwueaUFTb9NxUnqz5mabUdbeMfrCJxRvA1Y3L",
             "type": "Listing",
           },
           Object {
             "buyer": "FvSce4MGwueaUFTb9NxUnqz5mabUdbeMfrCJxRvA1Y3L",
             "lamports": "12500000000",
+            "marketplace": "Magic Eden",
             "type": "Sale",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "8NfuNb2Sjqu21XP8QMpf7oJ1pGWmCePieLR7Ev3hwpyk",
             "type": "Listing",
           },
           Object {
             "buyer": "8NfuNb2Sjqu21XP8QMpf7oJ1pGWmCePieLR7Ev3hwpyk",
             "lamports": "32500000000",
+            "marketplace": "Magic Eden",
             "type": "Sale",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "X43PbJ7ToG5F8G9sZeNDT7NQnBqPgiWPGPGT3JRFoku",
             "type": "Listing",
           },
@@ -208,27 +224,32 @@ describe("web3 tests", () => {
       expect(data).toMatchInlineSnapshot(`
         Array [
           Object {
+            "marketplace": "Magic Eden",
             "seller": "CXrqupyNCFb1sgSUzVP5jpazPjVeuRwogP3X2AHjKav1",
             "type": "Listing",
           },
           Object {
             "buyer": "CXrqupyNCFb1sgSUzVP5jpazPjVeuRwogP3X2AHjKav1",
             "lamports": "50000000000",
+            "marketplace": "Magic Eden",
             "type": "Sale",
           },
           Object {
             "buyer": "C4qj2p7BhvFv6e5DbLcE7v1XsX7u7cjnHY6WaCEZ8cum",
             "lamports": "82000000000",
+            "marketplace": "Magic Eden",
             "type": "Sale",
           },
           Object {
             "buyer": "GLbzG6GMYimrJg2EJX7GKGgHzjwKpkMk7YFq7JNCyQQx",
             "lamports": "76640000000",
+            "marketplace": "Magic Eden",
             "type": "Sale",
           },
           Object {
             "buyer": "51abCyffua4zRMNzWuAxyowEM9WqPSjKmuSzSZ9fPncr",
             "lamports": "17148199999",
+            "marketplace": "Magic Eden",
             "type": "Sale",
           },
           Object {
@@ -246,23 +267,28 @@ describe("web3 tests", () => {
       expect(data).toMatchInlineSnapshot(`
         Array [
           Object {
+            "marketplace": "Magic Eden",
             "seller": "9J5MuJBA1B9zeFe99ZbZkPtkP683dgAoX5BqfQV2m1B7",
             "type": "Listing",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "9J5MuJBA1B9zeFe99ZbZkPtkP683dgAoX5BqfQV2m1B7",
             "type": "CancelListing",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "9J5MuJBA1B9zeFe99ZbZkPtkP683dgAoX5BqfQV2m1B7",
             "type": "Listing",
           },
           Object {
             "buyer": "9J5MuJBA1B9zeFe99ZbZkPtkP683dgAoX5BqfQV2m1B7",
             "lamports": "4200000000",
+            "marketplace": "Magic Eden",
             "type": "Sale",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "HqC33C36c4mEpmfTyCjguWG2JeMQYbU4LzsjnMzZzJtx",
             "type": "Listing",
           },
@@ -281,24 +307,29 @@ describe("web3 tests", () => {
       expect(data).toMatchInlineSnapshot(`
         Array [
           Object {
+            "marketplace": "Magic Eden",
             "seller": "BoD7A9AoCZbbk5BTZBG6Szxmim3c3poZPQa6sxNFCERk",
             "type": "Listing",
           },
           Object {
             "buyer": "BoD7A9AoCZbbk5BTZBG6Szxmim3c3poZPQa6sxNFCERk",
             "lamports": "660000000",
+            "marketplace": "Magic Eden",
             "type": "Sale",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "i5RWK8qMd12i5KfcuAG13UK15jod4L3sBRBKUKYGaSr",
             "type": "Listing",
           },
           Object {
             "buyer": "i5RWK8qMd12i5KfcuAG13UK15jod4L3sBRBKUKYGaSr",
             "lamports": "400000000",
+            "marketplace": "Magic Eden",
             "type": "Sale",
           },
           Object {
+            "marketplace": "Magic Eden",
             "seller": "CjQisj3WyH61TH31xmFdi76isBfpYEZAyH8q8VZ8q2F6",
             "type": "Listing",
           },

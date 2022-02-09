@@ -3,6 +3,7 @@ import { programs } from "@metaplex/js";
 import {
   CancelListingTransaction,
   ListingTransaction,
+  Marketplace,
   MintTransaction,
   NftHistory,
   NftMetadata,
@@ -409,6 +410,7 @@ const scanTokenAccountList = async (
                       seller: inx.parsed.info.owner,
                       type: TransactionType.Listing,
                       signatures: tx.transaction.signatures,
+                      marketplace: Marketplace.MagicEden,
                     };
 
                     // Record listing transaction
@@ -422,6 +424,7 @@ const scanTokenAccountList = async (
                     seller: inx.parsed.info.owner,
                     type: TransactionType.CancelListing,
                     signatures: tx.transaction.signatures,
+                    marketplace: Marketplace.MagicEden,
                   };
 
                   // Record cancel listing transaction
@@ -443,6 +446,7 @@ const scanTokenAccountList = async (
                       seller: authority,
                       type: TransactionType.Listing,
                       signatures: tx.transaction.signatures,
+                      marketplace: Marketplace.MagicEden,
                     };
 
                     // Record listing transaction
@@ -458,6 +462,7 @@ const scanTokenAccountList = async (
                           seller: newAuthority,
                           type: TransactionType.CancelListing,
                           signatures: tx.transaction.signatures,
+                          marketplace: Marketplace.MagicEden,
                         };
 
                       // Record cancel listing transaction
@@ -481,6 +486,7 @@ const scanTokenAccountList = async (
                 type: TransactionType.Sale,
                 lamports: lamportsTransferred,
                 signatures: tx.transaction.signatures,
+                marketplace: Marketplace.MagicEden,
               };
 
               // Record sale transaction

@@ -42,6 +42,10 @@ export enum TransactionType {
   Sale = "Sale",
 }
 
+export enum Marketplace {
+  MagicEden = "Magic Eden",
+}
+
 interface TransactionBase {
   tx: ParsedConfirmedTransaction;
   signatures: string[];
@@ -62,17 +66,20 @@ export interface TransferTransaction extends TransactionBase {
 export interface ListingTransaction extends TransactionBase {
   type: TransactionType.Listing;
   seller: string;
+  marketplace: Marketplace;
 }
 
 export interface CancelListingTransaction extends TransactionBase {
   type: TransactionType.CancelListing;
   seller: string;
+  marketplace: Marketplace;
 }
 
 export interface SaleTransaction extends TransactionBase {
   type: TransactionType.Sale;
   buyer: string;
   lamports: BN;
+  marketplace: Marketplace;
 }
 
 /**
