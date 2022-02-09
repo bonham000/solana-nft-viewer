@@ -144,17 +144,14 @@ export const fetchActivityHistoryForMintAddress = async (
  */
 const forEachTransactionMessageInstruction = async (
   txs: (ParsedConfirmedTransaction | null)[],
-  handlerFn: (
-    tx: ParsedConfirmedTransaction,
-    ix: ParsedInstruction,
-  ) => Promise<void>,
+  txHandlerFn: (ctx: BaseTransactionContext) => Promise<void>,
 ) => {
   for (const tx of txs) {
     const instructions = tx?.transaction.message.instructions;
     if (instructions) {
       for (const ix of instructions) {
         if ("parsed" in ix) {
-          await handlerFn(tx, ix);
+          await txHandlerFn({ tx, ix });
         }
       }
     }
@@ -167,11 +164,7 @@ const forEachTransactionMessageInstruction = async (
  */
 const forEachTransactionInnerInstruction = async (
   txs: (ParsedConfirmedTransaction | null)[],
-  handlerFn: (
-    tx: ParsedConfirmedTransaction,
-    ix: ParsedInstruction,
-    innerInstruction: ParsedInnerInstruction,
-  ) => Promise<void>,
+  txHandlerFn: (ctx: MarketplaceMatcherContext) => Promise<void>,
 ) => {
   for (const tx of txs) {
     const innerInstructions = tx?.meta?.innerInstructions;
@@ -179,7 +172,7 @@ const forEachTransactionInnerInstruction = async (
       for (const innerInstruction of innerInstructions) {
         for (const ix of innerInstruction.instructions) {
           if ("parsed" in ix) {
-            await handlerFn(tx, ix, innerInstruction);
+            await txHandlerFn({ tx, ix, innerInstruction });
           }
         }
       }
@@ -196,31 +189,34 @@ const scanMintAddressHistory = async (address: string) => {
   let tokenAccounts: string[] = [];
   let mintAddressHistory: NftHistory = [];
 
-  const parseInstruction = async (
-    tx: ParsedConfirmedTransaction,
-    ix: ParsedInstruction,
-  ) => {
+  // Handler to parse relevant mint address transactions
+  const parseInstruction = async (txContext: BaseTransactionContext) => {
     const ctx: TransactionMatcherContext = {
-      tx,
-      ix,
+      ...txContext,
       address,
       history: [],
       tokenAccounts: [],
     };
 
+    // Logic to match mint address transactions. Additional matcher functions
+    // may be defined to match additional transactions/token accounts here.
     const result = await pipe(
       matchMintTransaction,
       andThen(matchCreateTransaction),
       andThen(matchTransferTransaction),
-      // Add logic to match other transaction types here
+      // Add additional functions to match other transactions here
     )(ctx);
 
     mintAddressHistory.push(...result.history);
     tokenAccounts.push(...result.tokenAccounts);
   };
 
-  // First get all the transactions for the given mint address
+  // Get all the transactions for the given mint address
   const txs = await fetchAllTransactionsForAddress(address);
+
+  // Pass the transactions through parsing logic which inspects both
+  // message instructions and transaction inner instructions to identify
+  // target transactions and associated token accounts
   await forEachTransactionInnerInstruction(txs, parseInstruction);
   await forEachTransactionMessageInstruction(txs, parseInstruction);
 
@@ -243,41 +239,39 @@ const scanTokenAccountList = async (
   const checkedTransactions = new Set();
   const tokenAccountsList = Array.from(new Set(tokenAccounts));
 
+  // Handler function to parse marketplace transactions
+  const parseInnerInstruction = async (ctx: MarketplaceMatcherContext) => {
+    // This is the main flow which identifies a particular marketplace
+    // transaction given the parsed transaction data. Additional matcher
+    // functions can be defined to match and identify any other transaction
+    // types and then added in here. Note that this pipeline will return
+    // the first transaction which is matched.
+    const matchedTx = await pipe(
+      matchSaleTransaction(ctx),
+      andThen(matchListingTransaction(ctx)),
+      andThen(matchCancelListingTransaction(ctx)),
+      // Add additional functions to match other transactions here
+    )(None());
+
+    // Match result and add to list if it exists
+    matchOption(matchedTx, {
+      some: (x) => {
+        // Avoid adding the same tx twice
+        const signature = x.signatures.join("");
+        if (!checkedTransactions.has(signature)) {
+          checkedTransactions.add(signature);
+          txHistory.push(x);
+        }
+      },
+      none: () => null,
+    });
+  };
+
   // For each identified token account for the given mint address, search
   // its transaction history and identify transactions related to Magic Eden
   // using Magic Eden accounts. Record these transactions in the activity
   // history.
   for (const tokenAccountAddress of tokenAccountsList) {
-    const parseInnerInstruction = async (
-      tx: ParsedConfirmedTransaction,
-      ix: ParsedInstruction,
-      innerInstruction: ParsedInnerInstruction,
-    ) => {
-      const ctx: MarketplaceMatcherContext = { ix, tx, innerInstruction };
-
-      // Pipeline to identify marketplace transactions
-      const matchedTx = await pipe(
-        matchSaleTransaction(ctx),
-        andThen(matchListingTransaction(ctx)),
-        andThen(matchCancelListingTransaction(ctx)),
-        // Add additional logic to match other transactions here. Note that
-        // this pipeline will return the first transaction which is matched.
-      )(None());
-
-      // Match result and add to list if it exists
-      matchOption(matchedTx, {
-        some: (x) => {
-          // Avoid adding the same tx twice
-          const signature = x.signatures.join("");
-          if (!checkedTransactions.has(signature)) {
-            checkedTransactions.add(signature);
-            txHistory.push(x);
-          }
-        },
-        none: () => null,
-      });
-    };
-
     const txs = await fetchAllTransactionsForAddress(tokenAccountAddress);
     await forEachTransactionInnerInstruction(txs, parseInnerInstruction);
   }
@@ -285,10 +279,13 @@ const scanTokenAccountList = async (
   return txHistory;
 };
 
-interface TransactionMatcherContext {
-  address: string;
+interface BaseTransactionContext {
   tx: ParsedConfirmedTransaction;
   ix: ParsedInstruction;
+}
+
+interface TransactionMatcherContext extends BaseTransactionContext {
+  address: string;
   history: NftHistory;
   tokenAccounts: string[];
 }
@@ -419,16 +416,19 @@ const matchMintTransaction: TransactionMatcherFn = async (ctx) => {
   return ctx;
 };
 
-interface MarketplaceMatcherContext {
-  tx: ParsedConfirmedTransaction;
-  ix: ParsedInstruction;
+interface MarketplaceMatcherContext extends BaseTransactionContext {
   innerInstruction: ParsedInnerInstruction;
 }
 
+// The marketplace matcher function receives and returns an Option of a
+// possibly matched transaction. The first function which matches a transaction
+// returns a Some<TransactionVariant>. Then, subsequent functions will just
+// return this same value. This assumes for a given transaction it can only
+// be matched to a single specific target transaction.
 type MarketplaceMatcherFn = (
   ctx: MarketplaceMatcherContext,
 ) => (
-  txResult: Option<TransactionVariant>,
+  matchedTx: Option<TransactionVariant>,
 ) => Promise<Option<TransactionVariant>>;
 
 // This is the mainnet account which is used by Magic Eden for listing
@@ -453,9 +453,9 @@ const DELEGATE_ADDRESS = "1BWutmTvYPwDtmw9abTkS4Ssr8no61spGAvW1X6NDix";
  * Match a Magic Eden listing transaction.
  */
 const matchListingTransaction: MarketplaceMatcherFn = (ctx) => {
-  return async (opt) => {
-    if (opt.some) {
-      return opt;
+  return async (matchedTxOption) => {
+    if (matchedTxOption.some) {
+      return matchedTxOption;
     }
 
     const { ix, tx } = ctx;
@@ -499,9 +499,9 @@ const matchListingTransaction: MarketplaceMatcherFn = (ctx) => {
  * Match a Magic Eden cancel listing transaction.
  */
 const matchCancelListingTransaction: MarketplaceMatcherFn = (ctx) => {
-  return async (opt) => {
-    if (opt.some) {
-      return opt;
+  return async (matchedTxOption) => {
+    if (matchedTxOption.some) {
+      return matchedTxOption;
     }
 
     const { ix, tx, innerInstruction } = ctx;
@@ -519,7 +519,6 @@ const matchCancelListingTransaction: MarketplaceMatcherFn = (ctx) => {
       return Some(cancelListingTransaction);
     } else if (type === "setAuthority") {
       const { authority, newAuthority } = ix.parsed.info;
-
       if (authority === MAGIC_EDEN_LISTING_ACCOUNT) {
         if (innerInstruction.instructions.length === 1) {
           const cancelListingTransaction: CancelListingTransaction = {
@@ -544,9 +543,9 @@ const matchCancelListingTransaction: MarketplaceMatcherFn = (ctx) => {
  * Match a Magic Eden sale transaction.
  */
 const matchSaleTransaction: MarketplaceMatcherFn = (ctx) => {
-  return async (opt) => {
-    if (opt.some) {
-      return opt;
+  return async (matchedTxOption) => {
+    if (matchedTxOption.some) {
+      return matchedTxOption;
     }
 
     const { ix, tx, innerInstruction } = ctx;
@@ -556,9 +555,17 @@ const matchSaleTransaction: MarketplaceMatcherFn = (ctx) => {
     let isSaleTransaction = false;
     let lamportsTransferred = new BN(0);
 
-    // Identify transfers which involve this special multisig
-    // authority. These also represent sale transactions.
-    if (type === "transfer") {
+    // This is the most common sale transaction
+    if (ix.parsed.type === "setAuthority") {
+      const { authority } = ix.parsed.info;
+      if (authority === MAGIC_EDEN_LISTING_ACCOUNT) {
+        if (innerInstruction.instructions.length > 1) {
+          isSaleTransaction = true;
+        }
+      }
+    } else if (type === "transfer") {
+      // Identify transfers which involve this special multisig
+      // authority. These also represent sale transactions.
       const authority = ix.parsed.info.authority;
       const multisig = ix.parsed.info.multisigAuthority;
       if (authority === DELEGATE_ADDRESS || MULTI_SIG_ADDRESSES.has(multisig)) {
@@ -572,23 +579,15 @@ const matchSaleTransaction: MarketplaceMatcherFn = (ctx) => {
           isSaleTransaction = true;
         }
       }
-    } else if (ix.parsed.type === "setAuthority") {
-      const { authority } = ix.parsed.info;
-      if (authority === MAGIC_EDEN_LISTING_ACCOUNT) {
-        if (innerInstruction.instructions.length > 1) {
-          isSaleTransaction = true;
-        }
-      }
     }
 
+    // If it is a sale transaction record all transferred lamports. This is
+    // used to determine the buy price for Sale transactions, in which the
+    // total price represents all the transferred lamports. There are multiple
+    // separate transfers because of artist royalties.
     if (isSaleTransaction) {
       for (const ix of innerInstruction.instructions) {
         if ("parsed" in ix) {
-          // Record/increment transferred lamports. This is used to
-          // determine the buy price for Sale transactions, in which
-          // the total price represents all the transferred lamports.
-          // There are multiple separate transfers because of artist
-          // royalties.
           if (ix.parsed.type === "transfer") {
             const amount = ix.parsed.info.lamports;
             if (typeof amount === "number") {
