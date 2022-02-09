@@ -8,11 +8,16 @@ import {
   TransactionType,
   TransactionVariant,
 } from "../tools/types";
+// import {
+//   fetchSolPrice,
+//   fetchNftMetadata,
+//   fetchActivityHistoryForMintAddress,
+// } from "../tools/web3-original";
 import {
   fetchSolPrice,
   fetchNftMetadata,
   fetchActivityHistoryForMintAddress,
-} from "../tools/web3-original";
+} from "../tools/web3-refactored";
 import {
   formatDate,
   formatFiatPrice,

@@ -1,10 +1,15 @@
 import fetch from "jest-fetch-mock";
 import { NftHistory } from "../tools/types";
+// import {
+//   fetchActivityHistoryForMintAddress,
+//   fetchNftMetadata,
+//   fetchSolPrice,
+// } from "../tools/web3-original";
 import {
   fetchActivityHistoryForMintAddress,
   fetchNftMetadata,
   fetchSolPrice,
-} from "../tools/web3-original";
+} from "../tools/web3-refactored";
 
 // Extend Jest timeout - RPC request may take a while
 jest.setTimeout(90_000);
@@ -237,9 +242,17 @@ describe("web3 tests", () => {
     {
       await delay();
       const address = "A2MaKhSfuSUm3gqwn7wrBCyp7XmM6bggRg3PtmrgypfL";
-      const data = await getTxs(address, 13);
+      const data = await getTxs(address, 6);
       expect(data).toMatchInlineSnapshot(`
         Array [
+          Object {
+            "seller": "9J5MuJBA1B9zeFe99ZbZkPtkP683dgAoX5BqfQV2m1B7",
+            "type": "Listing",
+          },
+          Object {
+            "seller": "9J5MuJBA1B9zeFe99ZbZkPtkP683dgAoX5BqfQV2m1B7",
+            "type": "CancelListing",
+          },
           Object {
             "seller": "9J5MuJBA1B9zeFe99ZbZkPtkP683dgAoX5BqfQV2m1B7",
             "type": "Listing",
@@ -264,7 +277,7 @@ describe("web3 tests", () => {
     {
       await delay();
       const address = "BJ18kJVLXhMDJVcnoSYT9rFBZdqPuzNdQFbu3Sarux88";
-      const data = await getTxs(address, 13);
+      const data = await getTxs(address, 6);
       expect(data).toMatchInlineSnapshot(`
         Array [
           Object {
